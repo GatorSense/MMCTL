@@ -60,7 +60,7 @@ def convert_box_to_center_width_height(y_box, image_width=300, image_height=300)
 
 
 def load_data(data_path):
-    f = np.load(data_path)
+    f = np.load(data_path, allow_pickle=True)
 
     rgb = f["rgb"]
     thermal = f["thermal"]
