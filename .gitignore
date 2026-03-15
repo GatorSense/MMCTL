@@ -1,0 +1,57 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment/config
+.env
+
+# OS files
+Thumbs.db
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Generated experiment outputs
+checkpoints/
+outputs/
+runs/
+logs/
+
+# ML artifacts
+*.h5
+*.hdf5
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.pb
+*.pkl
+*.joblib
+*.npy
+*.npz
+
+# Temporary files
+tmp/
+temp/

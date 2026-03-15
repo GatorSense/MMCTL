@@ -1,0 +1,20 @@
+name: mmctl
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.8
+  - numpy
+  - pandas
+  - matplotlib
+  - scipy
+  - scikit-learn
+  - tqdm
+  - pyyaml
+  - psutil
+  - umap-learn
+  - pip
+  - pip:
+      - tensorflow==2.4.1
