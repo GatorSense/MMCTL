@@ -25,12 +25,55 @@ https://zenodo.org/records/19040867
 
 After downloading, extract the archive and place the dataset file in the repository directory (or specify the path when running the training scripts).
 
-## Run the demo
-`python demo_metrics.py`
+## Quick Repro (recommended)
 
-## Train MMCTL 
-`python train_mmctl.py`
+This is the easiest path to replicate Table 1 from the paper using precomputed sample results.
 
-## Train task heads 
-`python train_task_heads.py`
+1. Install requirements:
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the demo metrics script:
+
+```bash
+python demo_metrics.py
+```
+
+This script loads the provided `sample_results.csv` and prints the same metric summary used for Table 1.
+
+## Full training workflow (optional)
+
+If you want to run the full training pipeline end-to-end, execute the smoke tests in this order:
+
+1. Train MMCTL representation space:
+
+```bash
+python smoke_test_train_mmctl.py
+```
+
+2. Train downstream task heads:
+
+```bash
+python smoke_test_taskheads.py
+```
+
+3. Compute embedding metrics:
+
+```bash
+python smoke_test_embedding_metrics.py
+```
+
+The smoke tests are designed to verify each stage and recreate the evaluation chain.
+
+## Direct training commands
+
+`train_mmctl.py` : train the MMCTL latent space model
+
+`train_task_heads.py` : train downstream task heads on learned embeddings
+
+`demo_metrics.py` : load sample results and display the main metrics
+
+`sample_results.csv` : lightweight example results
 
