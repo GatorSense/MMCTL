@@ -4,7 +4,7 @@ Minimal custom losses used by train_mmctl.py.
 
 import tensorflow as tf
 
-from continuous_triplet_loss import batch_all_continuous_triplet_loss_final_multimodal
+from mmctl.continuous_triplet_loss import batch_all_continuous_triplet_loss_final_multimodal
 
 
 def keras_batch_all_triplet_continuous_loss_multimodal(margin=0.01, emb_dim=1024):

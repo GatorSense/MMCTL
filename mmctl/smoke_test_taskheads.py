@@ -27,7 +27,7 @@ def main():
 
     cmd = [
         sys.executable,
-        "train_taskheads.py",
+        "mmctl/train_taskheads.py",
         "--data_npz", data_path,
         "--mmctl_dir", mmctl_dir,
         "--out_dir", out_dir,

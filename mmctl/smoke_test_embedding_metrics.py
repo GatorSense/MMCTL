@@ -23,7 +23,7 @@ def main():
 
     cmd = [
         sys.executable,
-        "embedding_metrics.py",
+        "mmctl/embedding_metrics.py",
         "--data_npz", data_path,
         "--mmctl_dir", mmctl_dir,
         "--out_dir", out_dir,

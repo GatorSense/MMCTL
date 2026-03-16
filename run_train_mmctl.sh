@@ -26,7 +26,7 @@ if [ "$1" == "demo" ]; then
     EPOCHS=1
 fi
 
-python train_mmctl.py \
+python mmctl/train_mmctl.py \
     --data_path data.npz \
     --output_dir outputs/mmctl \
     --margin 0.1 \

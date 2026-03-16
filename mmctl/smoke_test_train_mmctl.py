@@ -17,7 +17,7 @@ def main():
 
     cmd = [
         sys.executable,
-        "train_mmctl.py",
+        "mmctl/train_mmctl.py",
         "--data_path", data_path,
         "--output_dir", output_dir,
         "--epochs", "1",

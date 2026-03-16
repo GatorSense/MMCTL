@@ -4,8 +4,8 @@ This repository contains code for training MMCTL latent spaces, training downstr
 
 ## Files
 
-- `train_mmctl.py` : train the MMCTL latent space model
-- `train_task_heads.py` : train downstream task heads on learned embeddings
+- `mmctl/train_mmctl.py` : train the MMCTL latent space model
+- `mmctl/train_taskheads.py` : train downstream task heads on learned embeddings
 - `demo_metrics.py` : load sample results and display the main metrics
 - `sample_results.csv` : lightweight example results
 
@@ -50,28 +50,28 @@ If you want to run the full training pipeline end-to-end, execute the smoke test
 1. Train MMCTL representation space:
 
 ```bash
-python smoke_test_train_mmctl.py
+python mmctl/smoke_test_train_mmctl.py
 ```
 
 2. Train downstream task heads:
 
 ```bash
-python smoke_test_taskheads.py
+python mmctl/smoke_test_taskheads.py
 ```
 
 3. Compute embedding metrics:
 
 ```bash
-python smoke_test_embedding_metrics.py
+python mmctl/smoke_test_embedding_metrics.py
 ```
 
 The smoke tests are designed to verify each stage and recreate the evaluation chain.
 
 ## Direct training commands
 
-`train_mmctl.py` : train the MMCTL latent space model
+`mmctl/train_mmctl.py` : train the MMCTL latent space model
 
-`train_task_heads.py` : train downstream task heads on learned embeddings
+`mmctl/train_taskheads.py` : train downstream task heads on learned embeddings
 
 `demo_metrics.py` : load sample results and display the main metrics
 

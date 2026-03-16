@@ -5,8 +5,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from embedding_metrics import compute_all_alignment_and_smoothness
-from utils import generate_triplet_box_label_normalized
+from mmctl.embedding_metrics import compute_all_alignment_and_smoothness
+from mmctl.utils import generate_triplet_box_label_normalized
 
 
 # -----------------------------

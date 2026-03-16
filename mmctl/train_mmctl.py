@@ -9,15 +9,15 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
 
-from models import image_reconstruction_multi_modalv1
-from utils import (
+from mmctl.models import image_reconstruction_multi_modalv1
+from mmctl.utils import (
     generate_triplet_box_label_normalized,
     global_max_normalize,
     resampling,
     assign_tile_labels,
     weigh_features_multi,
 )
-from losses import (
+from mmctl.losses import (
     keras_batch_all_triplet_continuous_loss_multimodal,
     ssim_loss,
 )

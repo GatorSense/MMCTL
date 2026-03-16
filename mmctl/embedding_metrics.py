@@ -14,8 +14,8 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
-from utils import generate_triplet_box_label_normalized
-from losses import (
+from mmctl.utils import generate_triplet_box_label_normalized
+from mmctl.losses import (
     keras_batch_all_triplet_continuous_loss_multimodal,
     ssim_loss,
 )
