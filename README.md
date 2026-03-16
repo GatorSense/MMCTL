@@ -15,6 +15,16 @@ This repository contains code for training MMCTL latent spaces, training downstr
 pip install -r requirements.txt
 ```
 
+## Download Dataset
+
+The datasets used in the paper are hosted on Zenodo.
+
+Download them here:
+
+https://zenodo.org/records/19040867
+
+After downloading, extract the archive and place the dataset file in the repository directory (or specify the path when running the training scripts).
+
 ## Run the demo
 `python demo_metrics.py`
 
