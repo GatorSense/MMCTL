@@ -9,10 +9,24 @@ This repository contains code for training MMCTL latent spaces, training downstr
 - `demo_metrics.py` : load sample results and display the main metrics
 - `sample_results.csv` : lightweight example results
 
+## File Architecture
+
+- `mmctl/` : core library and training scripts
+  - `train_mmctl.py` : entrypoint for learning multimodal embedding space
+  - `train_taskheads.py` : entrypoint for training downstream classifiers/regressors on embeddings
+  - `embedding_metrics.py` : functions for computing alignment/smoothness metrics
+  - `utils.py` : helper utilities used by both training and metrics logic
+  - `smoke_test_*` : integrated end-to-end validations for each stage
+- `demo_metrics.py` : loads dataset NPZ + pretrained embeddings, computes metrics, saves reports
+- `environment.yml` : pinned conda dependency versions (replace requirements.txt)
+- `sample_data.npz` : lightweight mini dataset for quick demo iteration
+- `pretrained_embeddings/` : predicted embedding outputs used in metric evaluation
+
 ## Installation
 
 ```bash
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate mmctl
 ```
 
 ## Download Dataset
@@ -32,6 +46,11 @@ python demo_metrics.py --data /path/to/awir_data.npz
 ```
 
 `sample_data.npz` is a lightweight dataset used for a single demo iteration to show how models are trained from MMCTL to task heads and then evaluated with embedding metrics. It can be replaced with any other dataset NPZ file (e.g. `awir_data.npz`) during training.
+
+## Update Info
+
+- Date: 2026-03-17
+- Functionality updated: training code and our reproduction path for Table 1.
 
 ## Quick Repro (recommended)
 
