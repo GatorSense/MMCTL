@@ -31,7 +31,7 @@ def main():
         "--data_npz", data_path,
         "--mmctl_dir", mmctl_dir,
         "--out_dir", out_dir,
-        "--runs", "1",
+        "--runs", "2",
         "--test_size", "0.25",
         "--head_epochs", "2",
         "--head_bs", "4",

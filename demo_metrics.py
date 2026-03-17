@@ -1,3 +1,4 @@
+import argparse
 import os
 import numpy as np
 import pandas as pd
@@ -13,8 +14,18 @@ from mmctl.utils import generate_triplet_box_label_normalized
 # Config
 # -----------------------------
 REPO_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(REPO_DIR, "data.npz")
+DEFAULT_DATA_PATH = os.path.join(REPO_DIR, "awir_data.npz")
 EMB_DIR = os.path.join(REPO_DIR, "pretrained_embeddings")
+
+parser = argparse.ArgumentParser(description="Compute demo metrics from MMCTL embeddings.")
+parser.add_argument(
+    "--data",
+    "-d",
+    default=DEFAULT_DATA_PATH,
+    help="Path to a dataset NPZ file (default: awir_data.npz in the repo directory).",
+)
+args = parser.parse_args()
+DATA_PATH = args.data
 
 RUNS = range(1, 9)
 

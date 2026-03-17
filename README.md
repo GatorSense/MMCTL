@@ -25,6 +25,14 @@ https://zenodo.org/records/19040867
 
 After downloading, extract the archive and place the dataset file in the repository directory (or specify the path when running the training scripts).
 
+For repro, you need to download the `awir` dataset and save it in the same location as this repository (or point to it explicitly with a general path like `/path/to/awir_data.npz`). The `demo_metrics.py` script should be run with that file path, for example:
+
+```bash
+python demo_metrics.py --data /path/to/awir_data.npz
+```
+
+`sample_data.npz` is a lightweight dataset used for a single demo iteration to show how models are trained from MMCTL to task heads and then evaluated with embedding metrics. It can be replaced with any other dataset NPZ file (e.g. `awir_data.npz`) during training.
+
 ## Quick Repro (recommended)
 
 This is the easiest path to replicate Table 1 from the paper using precomputed sample results.
