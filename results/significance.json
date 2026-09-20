@@ -1,0 +1,48 @@
+{
+  "design": "Paired tests across 8 AWIR runs. Structure scores from demo_metrics (lower better). Downstream uses proxy taskhead CV if available (higher better).",
+  "structure_vs_best_baseline": [
+    {
+      "metric": "structure_score_cls",
+      "a": "MMCTL",
+      "b": "Concat",
+      "n": 8,
+      "mean_a": -3.0981657226526753,
+      "mean_b": -0.281663067849121,
+      "mean_diff_a_minus_b": -2.8165026548035543,
+      "wilcoxon_stat": 0.0,
+      "wilcoxon_p": 0.0078125,
+      "wilcoxon_note": null,
+      "paired_ttest_stat": -42.098486065494924,
+      "paired_ttest_p": 1.113226536635823e-09
+    },
+    {
+      "metric": "structure_score_box",
+      "a": "MMCTL",
+      "b": "RGB",
+      "n": 8,
+      "mean_a": -3.0558758736012193,
+      "mean_b": -0.42267852011230067,
+      "mean_diff_a_minus_b": -2.633197353488918,
+      "wilcoxon_stat": 0.0,
+      "wilcoxon_p": 0.0078125,
+      "wilcoxon_note": null,
+      "paired_ttest_stat": -19.781507680949883,
+      "paired_ttest_p": 2.1086217720163421e-07
+    },
+    {
+      "metric": "structure_score_pos",
+      "a": "MMCTL",
+      "b": "RGB",
+      "n": 8,
+      "mean_a": -3.7896406373989633,
+      "mean_b": 0.22814531939282817,
+      "mean_diff_a_minus_b": -4.017785956791792,
+      "wilcoxon_stat": 0.0,
+      "wilcoxon_p": 0.0078125,
+      "wilcoxon_note": null,
+      "paired_ttest_stat": -13.50247646079473,
+      "paired_ttest_p": 2.8704918977965083e-06
+    }
+  ],
+  "downstream_proxy_vs_best_baseline": []
+}
