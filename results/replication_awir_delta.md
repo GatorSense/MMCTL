@@ -1,10 +1,9 @@
-# AWIR Replication Delta (Structure)
+# AWIR Replication Delta
 
-Source: `demo_metrics.py --data awir_data.npz` vs paper Table `tab:latent_alignment`.
+Source: `python demo_metrics.py --data /Users/meilunzhou/Documents/GitHub/CTL/awir_data.npz`  
+Compared to paper Table `tab:latent_alignment` (AWIR rows). Lower is better.
 
-Lower is better. Large-delta flag if |Δmean|>0.15 or |Δstd|>0.15.
-
-**Gate verdict: PASS** (0 flagged cells).
+**Structure gate: PASS** (0 cells with |Δmean|>0.15 or |Δstd|>0.15).
 
 | Method | Src | Paper | Code | Δmean | Status |
 |---|---|---|---|---|---|
@@ -27,10 +26,13 @@ Lower is better. Large-delta flag if |Δmean|>0.15 or |Δstd|>0.15.
 | MMCTL | B | -2.93±0.18 | -3.06±0.15 | -0.13 | ok |
 | MMCTL | P | -3.79±0.61 | -3.79±0.61 | +0.00 | ok |
 
-## Notes
+## Notes for Agent B
+- Do **not** overwrite paper structure table; code matches printed values within rounding / mild float drift.
+- Largest drifts: Thermal B (+0.07), Concat B (+0.05), MMCTL B (−0.13). Ranking unchanged; MMCTL remains best by a large margin.
+- Machine-readable: `results/replication_awir.json`.
+- Raw per-run: `results/demo_metrics_raw.csv`.
 
-- Thermal **B**: paper 0.56±0.14 vs code ~0.63±0.15 (small drift).
-- Concat **B**: paper -0.19±0.15 vs code ~-0.14±0.15 (small drift).
-- MMCTL **B**: paper -2.93±0.18 vs code ~-3.06±0.15 (small drift; MMCTL still dominates).
-- All other cells match paper to printed precision (≤0.01–0.02).
-- Downstream task-head numbers: see later section once proxy eval finishes; train embeddings/checkpoints not shipped.
+## Downstream (task heads)
+- Paper protocol needs per-run **train** embeddings from Keras checkpoints — **not shipped** (only `*_test.npy`).
+- Proxy eval running via `scripts/eval_pretrained_taskheads.py` (StratifiedKFold within released test embeddings). Treat as ranking evidence, not table replacement, until/unless checkpoints are provided.
+- Paper AWIR MMCTL reference: C 94.06±1.86, B R² 0.52±0.07, P R² 0.12±0.08.
