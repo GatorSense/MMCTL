@@ -1,0 +1,75 @@
+{
+  "run": 1,
+  "cross_modal_rgb_to_thermal_half": {
+    "rank1_identity": 0.075,
+    "rank5_identity": 0.3,
+    "class_match_r1": 0.8083333333333333,
+    "n_test": 120,
+    "n_identity_success": 9,
+    "n_class_failure_at_r1": 23
+  },
+  "unimodal_class_r1_rgb_space": 1.0,
+  "figures": {
+    "pca": "/Users/meilunzhou/Documents/GitHub/MMCTL/results/figures/awir_mmctl_pca_run01.png",
+    "successes": "/Users/meilunzhou/Documents/GitHub/MMCTL/results/figures/awir_retrieval_successes.png",
+    "failures": "/Users/meilunzhou/Documents/GitHub/MMCTL/results/figures/awir_retrieval_failures.png"
+  },
+  "example_successes": [
+    {
+      "query_test_i": 24,
+      "nn_test_i": 24,
+      "query_class": "horse",
+      "nn_class": "horse",
+      "cosine_dist": 0.07267069816589355,
+      "identity_match": true,
+      "name": "H_DJI_0484.JPG"
+    },
+    {
+      "query_test_i": 27,
+      "nn_test_i": 27,
+      "query_class": "cow",
+      "nn_class": "cow",
+      "cosine_dist": 0.09972631931304932,
+      "identity_match": true,
+      "name": "CM_DJI_0468.jpg"
+    },
+    {
+      "query_test_i": 38,
+      "nn_test_i": 38,
+      "query_class": "horse",
+      "nn_class": "horse",
+      "cosine_dist": 0.07985949516296387,
+      "identity_match": true,
+      "name": "H_DJI_0484.JPG"
+    }
+  ],
+  "example_failures": [
+    {
+      "query_test_i": 4,
+      "nn_test_i": 119,
+      "query_class": "deer",
+      "nn_class": "horse",
+      "cosine_dist": 0.09420657157897949,
+      "identity_match": false,
+      "name": "060421_DJI_0676.JPG"
+    },
+    {
+      "query_test_i": 6,
+      "nn_test_i": 55,
+      "query_class": "horse",
+      "nn_class": "cow",
+      "cosine_dist": 0.07845783233642578,
+      "identity_match": false,
+      "name": "H_DJI_0584.JPG"
+    },
+    {
+      "query_test_i": 15,
+      "nn_test_i": 14,
+      "query_class": "horse",
+      "nn_class": "cow",
+      "cosine_dist": 0.09658688306808472,
+      "identity_match": false,
+      "name": "H_DJI_0624.JPG"
+    }
+  ]
+}
