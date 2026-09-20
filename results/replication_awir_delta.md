@@ -33,6 +33,21 @@ Compared to paper Table `tab:latent_alignment` (AWIR rows). Lower is better.
 - Raw per-run: `results/demo_metrics_raw.csv`.
 
 ## Downstream (task heads)
-- Paper protocol needs per-run **train** embeddings from Keras checkpoints — **not shipped** (only `*_test.npy`).
-- Proxy eval running via `scripts/eval_pretrained_taskheads.py` (StratifiedKFold within released test embeddings). Treat as ranking evidence, not table replacement, until/unless checkpoints are provided.
-- Paper AWIR MMCTL reference: C 94.06±1.86, B R² 0.52±0.07, P R² 0.12±0.08.
+
+Paper protocol needs per-run **train** embeddings from Keras checkpoints — **not shipped** (only `*_test.npy`).
+Proxy: sklearn Logistic/Ridge **5-fold CV on released test embeddings** (`scripts/sklearn_probe_awir.py`).
+
+| Method | Paper C% | Proxy C% | Paper B R² | Proxy B R² | Paper P R² | Proxy P R² |
+|---|---|---|---|---|---|---|
+| RGB | 77.08±3.21 | 77.92±2.52 | 0.34 | 0.14 | -0.13 | -0.25 |
+| Thermal | 78.96±1.59 | 79.90±2.06 | 0.30 | 0.05 | -0.32 | -0.40 |
+| Concat | 89.06±1.44 | 89.38±1.07 | 0.32 | 0.26 | -0.15 | -0.05 |
+| DS-A | 87.71±2.12 | **45.00±4.23** | 0.36 | -0.60 | -0.18 | -0.56 |
+| DS-M | 87.40±1.51 | **45.63±2.55** | 0.37 | -0.73 | -0.14 | -0.62 |
+| MMCTL | 94.06±1.86 | 93.44±1.37 | 0.52 | 0.33 | 0.12 | 0.12 |
+
+### Downstream gate
+- **PASS (ranking / MMCTL+unimodal+concat classification):** RGB/Thermal/Concat/MMCTL classification matches paper within ~1 pt; MMCTL remains best.
+- **FAIL (DeepSet absolute numbers):** DeepSet fused `.npy` linear probes collapse (~45% vs paper ~87%). Do **not** overwrite DeepSet downstream rows from this proxy; likely needs original DeepSet training heads / non-linear protocol or different embedding export.
+- **Regression:** absolute B R² underestimates paper (proxy protocol); **P R² for MMCTL matches** (0.12). Ranking MMCTL > Concat preserved for B/P.
+- Files: `results/taskhead_proxy_awir.json`, updates in `results/replication_awir.json`.

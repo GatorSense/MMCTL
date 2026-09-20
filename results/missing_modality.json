@@ -1,0 +1,46 @@
+{
+  "dataset": "AWIR",
+  "protocol": "Proxy sklearn Linear/Ridge 5-fold CV on released TEST embeddings only (checkpoints/train embeddings not shipped). Classification is informative for ranking; regression R\u00b2 is not expected to match paper absolute values.",
+  "description": "At test/probe time, zero one half of the 2048-d MMCTL joint embedding (assumed [RGB|Thermal] 1024+1024) then L2-normalize and re-run frozen probes.",
+  "results": {
+    "drop_thermal": {
+      "acc_pct_mean": 84.6875,
+      "acc_pct_std": 2.0382016271742764,
+      "r2_box_mean": 0.2604275721160467,
+      "r2_box_std": 0.07453059766182546,
+      "r2_pos_mean": -0.003075567356375035,
+      "r2_pos_std": 0.07738745667680948,
+      "n_runs": 8
+    },
+    "drop_rgb": {
+      "acc_pct_mean": 86.14583333333333,
+      "acc_pct_std": 1.9889326722147174,
+      "r2_box_mean": 0.1896831631544906,
+      "r2_box_std": 0.08444837094593563,
+      "r2_pos_mean": -0.018712667808879563,
+      "r2_pos_std": 0.18530953533979905,
+      "n_runs": 8
+    },
+    "full": {
+      "acc_pct_mean": 93.4375,
+      "acc_pct_std": 1.3684004681634105,
+      "r2_box_mean": 0.3299124349474126,
+      "r2_box_std": 0.03204718082928114,
+      "r2_pos_mean": 0.12210504806704052,
+      "r2_pos_std": 0.0820432896173844,
+      "n_runs": 8
+    }
+  },
+  "delta_vs_full": {
+    "drop_thermal": {
+      "acc_pct_drop": 8.75,
+      "r2_box_drop": 0.0694848628313659,
+      "r2_pos_drop": 0.12518061542341555
+    },
+    "drop_rgb": {
+      "acc_pct_drop": 7.291666666666671,
+      "r2_box_drop": 0.14022927179292202,
+      "r2_pos_drop": 0.14081771587592007
+    }
+  }
+}

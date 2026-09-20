@@ -193,12 +193,105 @@
       }
     }
   },
-  "downstream_proxy": null,
+  "downstream_proxy": {
+    "protocol": "Proxy sklearn Linear/Ridge 5-fold CV on released TEST embeddings only (checkpoints/train embeddings not shipped). Classification is informative for ranking; regression R\u00b2 is not expected to match paper absolute values.",
+    "aggregate": {
+      "RGB": {
+        "acc_pct_mean": 77.91666666666667,
+        "acc_pct_std": 2.519763153394852,
+        "r2_box_mean": 0.14111779606859498,
+        "r2_box_std": 0.0748520019960115,
+        "r2_pos_mean": -0.24739900107648793,
+        "r2_pos_std": 0.15444875127982016,
+        "n_runs": 8
+      },
+      "Thermal": {
+        "acc_pct_mean": 79.89583333333333,
+        "acc_pct_std": 2.0623947784607597,
+        "r2_box_mean": 0.04590745036810884,
+        "r2_box_std": 0.053774073071197734,
+        "r2_pos_mean": -0.39743219495188886,
+        "r2_pos_std": 0.1893798717621981,
+        "n_runs": 8
+      },
+      "Concat": {
+        "acc_pct_mean": 89.375,
+        "acc_pct_std": 1.06811657410276,
+        "r2_box_mean": 0.2620971410517398,
+        "r2_box_std": 0.0428923309352585,
+        "r2_pos_mean": -0.04937824220355122,
+        "r2_pos_std": 0.0566705830809405,
+        "n_runs": 8
+      },
+      "DeepSetAttn": {
+        "acc_pct_mean": 44.99999999999999,
+        "acc_pct_std": 4.225771273642584,
+        "r2_box_mean": -0.6038890525873999,
+        "r2_box_std": 0.23793616029303308,
+        "r2_pos_mean": -0.5632584992627147,
+        "r2_pos_std": 0.2104238523617895,
+        "n_runs": 8
+      },
+      "DeepSetMean": {
+        "acc_pct_mean": 45.62500000000001,
+        "acc_pct_std": 2.5491206077814095,
+        "r2_box_mean": -0.726136880738325,
+        "r2_box_std": 0.3404684151276073,
+        "r2_pos_mean": -0.6177140018697659,
+        "r2_pos_std": 0.31568151567703706,
+        "n_runs": 8
+      },
+      "MMCTL": {
+        "acc_pct_mean": 93.4375,
+        "acc_pct_std": 1.3684004681634105,
+        "r2_box_mean": 0.3299124349474126,
+        "r2_box_std": 0.03204718082928114,
+        "r2_pos_mean": 0.12210504806704052,
+        "r2_pos_std": 0.0820432896173844,
+        "n_runs": 8
+      }
+    },
+    "paper_reference": {
+      "RGB": {
+        "acc": 77.08,
+        "r2_box": 0.34,
+        "r2_pos": -0.13
+      },
+      "Thermal": {
+        "acc": 78.96,
+        "r2_box": 0.3,
+        "r2_pos": -0.32
+      },
+      "Concat": {
+        "acc": 89.06,
+        "r2_box": 0.32,
+        "r2_pos": -0.15
+      },
+      "DeepSetAttn": {
+        "acc": 87.71,
+        "r2_box": 0.36,
+        "r2_pos": -0.18
+      },
+      "DeepSetMean": {
+        "acc": 87.4,
+        "r2_box": 0.37,
+        "r2_pos": -0.14
+      },
+      "MMCTL": {
+        "acc": 94.06,
+        "r2_box": 0.52,
+        "r2_pos": 0.12
+      }
+    },
+    "gate": "PROXY_ONLY \u2014 do not replace paper downstream table without checkpoints"
+  },
   "notes": [],
   "gate": {
     "structure_pass": true,
     "n_large_delta_cells": 0,
     "threshold": "abs(delta_mean)>0.15 or abs(delta_std)>0.15",
-    "verdict": "PASS"
+    "verdict": "PASS",
+    "downstream": "PROXY_PARTIAL_PASS",
+    "downstream_note": "Unimodal+Concat+MMCTL cls match paper; DeepSet proxy FAIL; regression absolute values protocol-limited"
   }
 }

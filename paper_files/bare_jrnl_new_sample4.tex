@@ -80,9 +80,9 @@ This work introduces Multi-Modal Continuous Triplet Loss (MMCTL), which treats m
 \section{Related Work}
 \label{sec:related}
 
-Supervised contrastive learning and cross-modal triplets typically define positives and negatives with binary co-membership (same class or matched view) and a fixed similarity threshold or margin \cite{khosla2020supervised,dutt2022shared}. Soft and continuous metric learning instead couples embedding distances to graded targets: Kim~\emph{et al.}~\cite{kim2019deep} learn from continuous pairwise similarity beyond binary supervision, and adaptive-margin triplets modulate the separation gap from rating or similarity strength \cite{ha2021adaptive}. Shared-manifold multi-sensor triplets place heterogeneous modalities in one embedding space for translation and fusion with missing data \cite{dutt2022shared}, while our prior multi-annotation continuous triplet organizes a \emph{unimodal} detector representation from joint class and box annotations \cite{zhou2025multi}.
+Binary supervised contrastive and cross-modal triplets define positives by class or view co-membership with a fixed margin \cite{khosla2020supervised,dutt2022shared}. Continuous metric learning instead couples distances to graded targets \cite{kim2019deep}, including adaptive-margin triplets \cite{ha2021adaptive}. Shared-manifold multi-sensor triplets align heterogeneous modalities for fusion with missing data \cite{dutt2022shared}; our prior multi-annotation continuous triplet organizes a \emph{unimodal} detector from joint class and box labels \cite{zhou2025multi}.
 
-MMCTL differs along four axes. (i)~A joint annotation vector with feature-wise normalization, task-length rescaling, and fixed task weights (Eqs.~\eqref{eq:ann-norm}--\eqref{eq:ann-concat}) defines a continuous multi-source similarity space. (ii)~A margin-free continuous triplet uses the annotation-distance gap $D(\mathbf{y}_a,\mathbf{y}_q)-D(\mathbf{y}_a,\mathbf{y}_p)$ as an adaptive separation target (Eq.~\eqref{eq:mm-adaptive}), without a hand-tuned margin hyperparameter. (iii)~A pairwise distance-alignment regularizer (Eq.~\eqref{eq:mm-reg}) matches embedding distances to annotation distances for the same pairs. (iv)~The construction is multi-modal: same-object, different-modality pairs share an identical joint annotation vector and therefore have zero annotation distance, which directly pulls cross-modal embeddings together in the shared latent space. Relative to \cite{zhou2025multi}, MMCTL therefore targets fusion geometry rather than single-modality detection features; relative to binary SupCon or fixed-margin cross-modal triplets, it replaces hard similarity partitions with annotation-ordered continuous constraints.
+MMCTL contributes: (i)~a joint annotation vector with normalization and task weights (Eqs.~\eqref{eq:ann-norm}--\eqref{eq:ann-concat}); (ii)~a margin-free continuous triplet with adaptive gap $D(\mathbf{y}_a,\mathbf{y}_q)-D(\mathbf{y}_a,\mathbf{y}_p)$ (Eq.~\eqref{eq:mm-adaptive}); (iii)~pairwise distance alignment (Eq.~\eqref{eq:mm-reg}); (iv)~a multi-modal shared space where same-object, different-modality pairs have zero annotation distance. Relative to \cite{zhou2025multi}, MMCTL targets fusion geometry; relative to SupCon or fixed-margin triplets, it replaces hard partitions with annotation-ordered continuous constraints.
 
 \section{Methodology}
 \label{sec:methodology}
@@ -312,9 +312,9 @@ Comparisons include concatenation and two DeepSet variants implemented with Torc
 
 Next, task heads are optimized using supervised losses appropriate to each task, with identical architectures and optimization settings across all fusion methods. Training runs for up to $3000$ epochs with early stopping based on validation performance and a patience of $1000$ epochs. Optimization uses Adam with a learning rate of $10^{-3}$ and weight decay of $10^{-4}$. Batch size is set to $4$ for AWIR with no gradient clipping applied, while NEON uses a batch size of $32$ with gradient clipping enabled at a norm of $5$. Task heads use a shallow multilayer perceptron for both classification and regression tasks. Code for reproducing all experiments can be found at
 \href{https://github.com/GatorSense/MMCTL}{github.com/GatorSense/MMCTL}.
-% TODO(B2): update numeric tables after Agent A replication deltas (results/replication_awir*).
-% TODO(B3): insert compute-cost, missing-modality, significance, and failure-analysis text/figures from results/new_experiments_summary.md (no placeholder empty sections).
 
+\paragraph{Reproducibility.}
+AWIR structure scores in Table~\ref{tab:latent_alignment} are reproduced with released pretrained embeddings via \texttt{demo\_metrics.py}; absolute mean drift is at most $0.13$ (MMCTL box), with ranking unchanged. Absolute DeepSet downstream numbers and the full train-protocol task-head results require original Keras checkpoints (not shipped). We therefore retain Table~\ref{tab:downstream_performance_tasks} as reported and do not replace DeepSet cells with linear-probe proxies on exported embeddings.
 
 \subsection{Latent Space Quality Metrics}
 \label{sec:latent_space_quality_metrics}
@@ -459,6 +459,8 @@ On NEON, fusion methods provide a strong baseline by integrating complementary m
 
 Across both datasets, the comparison demonstrates that state-of-the-art fusion enhances feature integration but does not guarantee coherent annotation-aligned geometry. MMCTL extends beyond feature aggregation by explicitly structuring the latent space around joint semantic and geometric relationships. This structured organization translates into consistently stronger frozen-task generalization, which supports the broader claim that representation quality depends not only on modality combination but also on how the latent geometry is constrained during learning.
 
+Paired Wilcoxon tests across the $8$ AWIR runs confirm that MMCTL improves structure scores over the strongest competing method on each annotation source (class vs.\ Concat.; box and position vs.\ RGB; all $p{=}0.0078$). Supporting linear probes on released test embeddings similarly rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.
+
 \begin{table}[t]
 \centering
 \caption{
@@ -543,9 +545,7 @@ Downstream task performance using unimodal and fused embeddings. Higher values i
 
 
 \subsection{Ablation Study}
-An ablation study evaluates how varying the strength of semantic supervision influences the learned MMCTL representation on NEON. The classification annotation weight is varied from 0.5 to 2.0 in increments of 0.25, while the box and height annotation weights remain fixed at 1.0. This design isolates the impact of semantic weighting without modifying the contribution of geometric supervision. All models share identical architectures and hyperparameters across weight configurations so that observed differences arise exclusively from changes in classification emphasis. This controlled adjustment allows analysis of how increasing or decreasing semantic pressure reshapes the latent space while preserving consistent box and height structure.
-
-\textbf{Results.} Fig.~\ref{fig:ablation2} shows that moderate classification weighting produces the strongest overall performance while extreme values introduce trade-offs. Classification improves as semantic weight increases from low values and stabilizes near a mid-range setting. Box regression follows a similar trend, peaking slightly above the balanced configuration before declining at higher weights, which suggests that excessive semantic emphasis begins to disrupt geometric structure. Height prediction remains comparatively stable across the entire range and consistently exceeds the SOTA baseline, indicating limited sensitivity to semantic weighting when geometric supervision is fixed. Overall, the results demonstrate that identifying the appropriate balance among annotation weights is a central challenge, as semantic and geometric supervision interact in ways that directly shape both discriminative and spatial structure within the MMCTL latent space.
+We vary the NEON classification weight from $0.5$ to $2.0$ (box and height fixed at $1.0$). Fig.~\ref{fig:ablation2} shows moderate semantic weight yields the best overall trade-off: classification and box improve into a mid-range setting, while height remains comparatively stable and above the SOTA baseline. Extreme class weights degrade geometric objectives, underscoring the need to balance annotation sources in Eqs.~\eqref{eq:ann-norm}--\eqref{eq:ann-concat}.
 
 \begin{figure}[!htb]
     \centering
@@ -554,10 +554,27 @@ An ablation study evaluates how varying the strength of semantic supervision inf
     \label{fig:ablation2}
 \end{figure}
 
-\section{Conclusion}
-This work frames multi-modal representation learning as aligning embeddings across sensing modalities using annotation-defined similarity rather than task-loss geometry alone. MMCTL builds a shared latent space by coupling modality-specific embeddings through a weighted joint annotation vector, a margin-free continuous triplet, and pairwise distance alignment, yielding more coherent cross-modal geometry than unimodal or task-driven fusion under the same label sources. Experiments on two datasets show that this structure may result in stronger downstream performance. Future work will explore learning annotation weights adaptively and stress-testing transfer under missing modalities.
-% TODO(B3): optionally expand conclusion with compute/missing-modality/failure takeaways once Agent A artifacts land.
+\subsection{Missing Modality, Compute, and Failure Analysis}
+\label{subsec:additional-analyses}
 
+\paragraph{Missing modality.}
+As a frozen-embedding probe on released AWIR test embeddings, we zero one $1024$-d half of the $2048$-d MMCTL joint vector (RGB$|$thermal), L2-normalize, and retrain linear probes. Full joint proxy accuracy is $93.44\pm1.37\%$. Dropping thermal yields $84.69\pm2.04\%$ ($-8.75$~pts); dropping RGB yields $86.15\pm1.99\%$ ($-7.29$~pts). Both ablations remain above unimodal RGB/thermal probe accuracies ($\approx$78--80\%), indicating complementary but non-redundant modality use under this probe protocol.
+
+\paragraph{Triplet compute.}
+With batch size $32$, modality concatenation yields $64$ embeddings and an upper bound of $249{,}984$ ordered triplets per batch ($\approx 2.0$M per epoch at eight steps) before the annotation-order mask; actual positives are data-dependent. A microbenchmark on Apple M4 CPU measures $\approx 1.7$\,s per training step at batch size $8$; the full AWIR training schedule was not re-timed on this machine.
+
+\paragraph{Cross-modal retrieval.}
+Splitting the joint embedding into modality halves and performing cosine nearest-neighbor retrieval gives rank-1 \emph{class} match of $80.8\%$, but rank-1 \emph{identity} match of only $7.5\%$. Failures concentrate on adjacent livestock confusions (e.g., deer$\leftrightarrow$horse, horse$\leftrightarrow$cow; Fig.~\ref{fig:retrieval_failures}). MMCTL therefore preserves class/geometry structure across modalities more reliably than exact instance pairing when joint halves are queried in isolation.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/awir_retrieval_failures.png}
+    \caption{AWIR cross-modal NN failures (RGB half $\rightarrow$ thermal half) for MMCTL joint embeddings. Mismatches are typically adjacent livestock classes rather than arbitrary semantics; identity rank-1 is only $7.5\%$, so we do not claim strong instance retrieval from split halves.}
+    \label{fig:retrieval_failures}
+\end{figure}
+
+\section{Conclusion}
+This work frames multi-modal representation learning as aligning embeddings across sensing modalities using annotation-defined similarity rather than task-loss geometry alone. MMCTL builds a shared latent space by coupling modality-specific embeddings through a weighted joint annotation vector, a margin-free continuous triplet, and pairwise distance alignment, yielding more coherent cross-modal geometry than unimodal or task-driven fusion under the same label sources. AWIR analyses further show statistically significant structure gains, graceful degradation under missing-modality probes, and strong class-level---but not identity-level---cross-modal neighborhoods. Future work includes adaptive annotation weights and end-to-end unfreezing comparisons.
 
 
 
