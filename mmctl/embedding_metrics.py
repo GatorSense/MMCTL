@@ -7,7 +7,6 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import NearestNeighbors
@@ -15,12 +14,29 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
 from mmctl.utils import generate_triplet_box_label_normalized
-from mmctl.losses import (
-    keras_batch_all_triplet_continuous_loss_multimodal,
-    ssim_loss,
-)
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# TensorFlow is only required when loading Keras checkpoints. Keep it lazy so
+# pretrained-embedding metric evaluation can run on machines where TF crashes.
+tf = None
+
+
+def _require_tf():
+    global tf
+    if tf is None:
+        import tensorflow as _tf
+
+        tf = _tf
+        tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    return tf
+
+
+def _require_losses():
+    from mmctl.losses import (
+        keras_batch_all_triplet_continuous_loss_multimodal,
+        ssim_loss,
+    )
+
+    return keras_batch_all_triplet_continuous_loss_multimodal, ssim_loss
 
 
 # =========================================================
@@ -234,6 +250,7 @@ def load_targets(data_npz: str) -> Dict[str, np.ndarray]:
 
 
 def build_custom_objects(embedding_dimension: int, margin: float) -> Dict[str, object]:
+    keras_batch_all_triplet_continuous_loss_multimodal, ssim_loss = _require_losses()
     return {
         "keras_batch_all_triplet_continuous_loss_multimodal":
             keras_batch_all_triplet_continuous_loss_multimodal,
@@ -253,9 +270,10 @@ def extract_embeddings(
     margin: float,
     batch_size: int,
 ) -> np.ndarray:
+    _tf = _require_tf()
     custom_objects = build_custom_objects(embedding_dimension, margin)
 
-    model = tf.keras.models.load_model(
+    model = _tf.keras.models.load_model(
         checkpoint_path,
         custom_objects=custom_objects,
         compile=False,
