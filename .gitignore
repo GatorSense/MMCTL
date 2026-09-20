@@ -55,3 +55,8 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# Local agent/tool virtualenvs
+.venv_*/
+.venv_exp/
+.venv_pdf/
