@@ -1,0 +1,45 @@
+{
+  "machine": {
+    "platform": "macOS-15.7.7-arm64-arm-64bit",
+    "processor": "arm",
+    "cpu_brand": "Apple M4",
+    "python": "3.9.6",
+    "tensorflow": "2.20.0",
+    "tf_devices": [
+      "/physical_device:CPU:0"
+    ],
+    "ram_gb": 16.0
+  },
+  "paper_training_defaults": {
+    "batch_size": 32,
+    "epochs_per_iteration": 100,
+    "iterations_per_run": 10,
+    "runs_awir": 8,
+    "total_epochs_awir": 8000
+  },
+  "triplets": {
+    "paper_batch": {
+      "batch_size": 32,
+      "embeddings_after_modality_concat": 64,
+      "max_ordered_triplets_per_batch": 249984,
+      "note": "Upper bound before annotation-order mask; actual positive count is data-dependent."
+    },
+    "measured_batch": {
+      "batch_size": 8,
+      "embeddings_after_modality_concat": 16,
+      "max_ordered_triplets_per_batch": 3360,
+      "note": "Upper bound before annotation-order mask; actual positive count is data-dependent."
+    },
+    "triplets_per_epoch_upper_bound_awir": 1999872
+  },
+  "measured": {
+    "microbatch_size": 8,
+    "sec_per_train_step_microbatch": 1.7020387668,
+    "estimated_sec_per_epoch_awir_naive_scale": 54.4652405376,
+    "sample_fit_1epoch_n16_bs4_sec": 12.240920708,
+    "tracemalloc_peak_mb": 17.146636962890625,
+    "rss_delta_mb": -233.609375,
+    "rss_after_mb": 1160.296875,
+    "caveat": "Full AWIR retrain (800 effective epochs across 8 runs) not executed on M4. Triplet cost scales roughly O((2B)^3); naive linear batch scaling underestimates."
+  }
+}

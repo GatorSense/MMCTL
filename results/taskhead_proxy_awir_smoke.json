@@ -1,0 +1,50 @@
+{
+  "protocol": "Proxy: StratifiedKFold within released test embeddings only (inner_folds=2). Not identical to paper train/val/test heads.",
+  "device": "mps",
+  "per_run": [
+    {
+      "run": 1,
+      "method": "MMCTL",
+      "setup": "full",
+      "cls_loss": 0.21710466817603447,
+      "acc": 0.9333333333333333,
+      "f1_macro": 0.9292440081913766,
+      "box_mse": 0.120462691411376,
+      "r2_box_mean": -1.6668735160522972,
+      "pos_mse": 0.10706279892474413,
+      "r2_pos_mean": -1.9120666572014127
+    },
+    {
+      "run": 1,
+      "method": "Concat",
+      "setup": "full",
+      "cls_loss": 0.4555535167455673,
+      "acc": 0.85,
+      "f1_macro": 0.8360653463112478,
+      "box_mse": 0.09059224463999271,
+      "r2_box_mean": -1.0200494048339386,
+      "pos_mse": 0.11020863987505436,
+      "r2_pos_mean": -1.965601969749029
+    }
+  ],
+  "aggregate": {
+    "Concat|full": {
+      "acc_pct_mean": 85.0,
+      "acc_pct_std": NaN,
+      "r2_box_mean": -1.0200494048339386,
+      "r2_box_std": NaN,
+      "r2_pos_mean": -1.965601969749029,
+      "r2_pos_std": NaN,
+      "n_runs": 1
+    },
+    "MMCTL|full": {
+      "acc_pct_mean": 93.33333333333333,
+      "acc_pct_std": NaN,
+      "r2_box_mean": -1.6668735160522972,
+      "r2_box_std": NaN,
+      "r2_pos_mean": -1.9120666572014127,
+      "r2_pos_std": NaN,
+      "n_runs": 1
+    }
+  }
+}
