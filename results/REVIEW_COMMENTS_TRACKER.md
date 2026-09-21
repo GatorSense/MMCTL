@@ -48,9 +48,9 @@ Status key: **DONE** | **PARTIAL** | **OPEN** | **DEFERRED** | **N/A**
 | AWIR significance | **DONE** | In manuscript + `significance.json` |
 | AWIR compute cost | **PARTIAL** | Upper bound + microbench in manuscript |
 | AWIR failure/retrieval | **DONE** | In manuscript + figures |
-| **NEON structure table** | **OPEN / IN PROGRESS** | No pretrained NEON embeddings in repo; proxy training required |
-| **NEON downstream table** | **OPEN / IN PROGRESS** | Same |
-| NEON significance | **OPEN** | Depends on NEON repro |
+| **NEON structure table** | **PROXY — absolute FAIL** | Used CTL `neon_data.npz`. Keep paper numbers. See `replication_neon_delta.md`. Improved script: `reproduce_neon_ae_mmctl.py` |
+| **NEON downstream table** | **PROXY — absolute FAIL** | Same; keep paper numbers |
+| NEON significance | **OPEN** | Needs faithful repro first |
 | Stronger baseline (R1.6) | **OPEN** | Recommended before resubmit |
 | Freeze vs E2E (R1.5) | **OPEN** | Recommended if compute allows |
 | Cross-region transfer | **OPEN** | Alternative/addition to missing-mod for R2.4 |

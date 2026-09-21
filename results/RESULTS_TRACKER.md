@@ -7,7 +7,7 @@ Generated from Agent A artifacts under `results/` (2026-09-20). Machine: Apple M
 |---|---|
 | AWIR latent structure replication | **PASS** |
 | AWIR downstream (proxy probes) | **PARTIAL PASS** (cls ranking OK; DeepSet absolute FAIL) |
-| NEON replication | **Deferred** |
+| NEON replication | **PROXY DONE — absolute FAIL** (CTL `neon_data.npz`; keep paper tables) |
 | New experiments (cost / significance / missing-mod / retrieval) | **Done** |
 | Stronger baselines / freeze-vs-E2E | **Skipped** |
 
@@ -143,29 +143,44 @@ Both single-modality probes remain above unimodal RGB/Thermal paper cls (~78–8
 
 ---
 
-## 7. Not run / deferred
+## 7. NEON proxy (CTL `neon_data.npz`)
 
-| Item | Status | Notes |
-|---|---|---|
-| NEON structure / downstream re-run | Deferred | No NEON embeddings in repo; AWIR-only scripts (`neon_status.md`) |
-| Stronger baselines (SupCon / Transformer) | Skipped | Optional; DeepSet checkpoint gap |
-| Freeze vs end-to-end | Skipped | Optional |
-| Full AWIR wall-clock retrain | Not done | Upper-bound + microbench only |
+**Data:** `/Users/meilunzhou/Documents/GitHub/CTL/neon_data.npz` (symlinked as `neon_data.npz`).  
+**Artifacts:** `replication_neon.json`, `replication_neon_delta.md`, `scripts/reproduce_neon_proxy.py`, `scripts/reproduce_neon_ae_mmctl.py`.  
+**No released NEON pretrained embeddings** in this repo / Zenodo (only raw NPZ).
 
-### Paper NEON numbers (reference only — not reproduced here)
+### First proxy run (sampled CTL; flawed Concat≡MMCTL architecture)
+
+Structure deltas vs paper are large (MMCTL C Δ ≈ +1.38). Downstream box R² exploded numerically (bad target scaling) — **do not use those box R² cells**. Classification ranking weak vs paper.
+
+**Verdict:** absolute reproduction **FAIL**. **Keep paper NEON tables.**  
+Improved AE-then-MMCTL script: `scripts/reproduce_neon_ae_mmctl.py` (run when ready).
+
+### Paper NEON numbers (authoritative — keep in manuscript)
 
 | | C | B / H |
 |---|---|---|
 | Structure MMCTL | −1.49±0.23 | B −2.07±0.29, H −1.58±0.25 |
 | Downstream MMCTL | 86.95±1.7% | B R² 0.43±0.04, H R² 0.74±0.02 |
 
+## 8. Still open experiments
+
+| Item | Status | Notes |
+|---|---|---|
+| Stronger baselines (SupCon / Transformer) | Skipped | R1.6 |
+| Freeze vs end-to-end | Skipped | R1.5 |
+| Full AWIR wall-clock retrain | Not done | Upper-bound + microbench only |
+| Faithful NEON Keras retrain | Open | Needs original checkpoints / GPU schedule |
+
 ---
 
-## 8. Artifact index
+## 9. Artifact index
 
 | File | Contents |
 |---|---|
 | `replication_awir.json` / `_delta.md` | Structure + downstream proxy vs paper |
+| `replication_neon.json` / `_delta.md` | NEON proxy vs paper (CTL npz) |
+| `REVIEW_COMMENTS_TRACKER.md` | Reviewer comments addressed vs open |
 | `demo_metrics_raw.csv` / `_summary.csv` | Per-run structure metrics |
 | `taskhead_proxy_awir.json` | Proxy downstream + missing-mod per run |
 | `significance.json` | Wilcoxon / t-tests |
@@ -179,7 +194,7 @@ Both single-modality probes remain above unimodal RGB/Thermal paper cls (~78–8
 
 ---
 
-## 9. Paper integration status
+## 10. Paper integration status
 
 | Content | In manuscript? |
 |---|---|
@@ -189,4 +204,5 @@ Both single-modality probes remain above unimodal RGB/Thermal paper cls (~78–8
 | Missing-modality numbers | Yes (B3) |
 | Compute-cost paragraph | Yes (B3) |
 | Class vs identity retrieval + failure fig | Yes (B3) |
-| NEON / stronger baselines / E2E | Not claimed |
+| NEON absolute numbers | Keep paper; proxy not claimed |
+| Stronger baselines / E2E | Not claimed |
