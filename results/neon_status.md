@@ -1,19 +1,23 @@
 # NEON Status
 
-## Data available
-- Local NPZ: `/Users/meilunzhou/Documents/GitHub/CTL/neon_data.npz` (symlinked as `neon_data.npz`)
+## Data used
+- **Authoritative path:** `/Users/meilunzhou/Documents/GitHub/CTL/neon_data.npz`
+- Symlink in MMCTL repo: `neon_data.npz` → that file
 - Keys: `rgb` (779,110,110,3), `hsi` (779,11,11,426), `lidar` (779,11,11,1), `class_labels`, `box_labels`, `height_info`, …
 
-## Gap
-- This repository’s training/eval path (`mmctl/train_mmctl.py`, `demo_metrics.py`, `pretrained_embeddings/`) is **AWIR-specific** (RGB + thermal, 300×300, class/box/position).
-- **No NEON pretrained embeddings** are included under `pretrained_embeddings/`.
-- NEON uses three modalities (RGB / HSI / LiDAR) and height instead of position; adapting encoders + annotation weighing would be a non-minimal code change.
+## What was run (2026-09-20)
+- Proxy Torch continuous-triplet on CTL NPZ (`scripts/reproduce_neon_proxy.py`)
+- Outputs: `results/replication_neon.json`, `results/replication_neon_delta.md`
+- **Absolute match to paper tables: FAIL** (no released NEON Keras embeddings/checkpoints; proxy architecture differs)
+- **Keep paper NEON structure/downstream numbers in the manuscript**
 
-## Decision
-- Documented and deferred for this revision pass.
-- Agent B should **not** claim NEON code replication from this repo’s current scripts.
-- If NEON numbers must be regenerated, need original CTL/NEON training artifacts or a dedicated multi-encoder port.
+## Gap for faithful reproduction
+- Repo training path was AWIR-oriented; Zenodo only ships raw NPZs (no NEON `pretrained_embeddings/`)
+- Need original Keras autoencoder + MMCTL checkpoints, or a full paper-faithful retrain on GPU
 
-## Paper NEON numbers (reference only; not re-run here)
-Structure (lower better): MMCTL C −1.49±0.23, B −2.07±0.29, H −1.58±0.25  
-Downstream: MMCTL C 86.95±1.7, B R² 0.43±0.04, H R² 0.74±0.02
+## Next script (better proxy protocol)
+- `scripts/reproduce_neon_ae_mmctl.py` — AE-pretrain baselines, then separate MMCTL (so Concat ≠ MMCTL)
+
+## Paper NEON numbers (keep)
+Structure MMCTL: C −1.49±0.23, B −2.07±0.29, H −1.58±0.25  
+Downstream MMCTL: C 86.95±1.7, B R² 0.43±0.04, H R² 0.74±0.02
