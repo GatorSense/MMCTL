@@ -205,7 +205,7 @@ def train_cls_model(
         dropout=cfg.dropout,
     ).to(cfg.device)
 
-    opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+    opt = torch.optim.Adam(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
 
     train_loader = DataLoader(FrozenEmbeddingClsDataset(z_tr, y_tr), batch_size=cfg.batch_size, shuffle=True)
     val_loader = DataLoader(FrozenEmbeddingClsDataset(z_va, y_va), batch_size=cfg.batch_size, shuffle=False)
@@ -262,7 +262,7 @@ def train_reg_model(
         dropout=cfg.dropout,
     ).to(cfg.device)
 
-    opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+    opt = torch.optim.Adam(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
 
     train_loader = DataLoader(FrozenEmbeddingRegDataset(z_tr, y_tr), batch_size=cfg.batch_size, shuffle=True)
     val_loader = DataLoader(FrozenEmbeddingRegDataset(z_va, y_va), batch_size=cfg.batch_size, shuffle=False)

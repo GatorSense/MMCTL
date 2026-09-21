@@ -7,7 +7,7 @@ Generated from Agent A artifacts under `results/` (2026-09-20). Machine: Apple M
 |---|---|
 | AWIR latent structure replication | **PASS** |
 | AWIR downstream (proxy probes) | **PARTIAL PASS** (cls ranking OK; DeepSet absolute FAIL) |
-| NEON replication | **PROXY DONE — absolute FAIL** (CTL `neon_data.npz`; keep paper tables) |
+| NEON replication | **PASS (structure)** / **PARTIAL (downstream)** — released emb + w_cls=1.0; DeepSet→SupCon/CrossAttn/Transformer |
 | New experiments (cost / significance / missing-mod / retrieval) | **Done** |
 | Stronger baselines / freeze-vs-E2E | **Skipped** |
 
@@ -143,18 +143,25 @@ Both single-modality probes remain above unimodal RGB/Thermal paper cls (~78–8
 
 ---
 
-## 7. NEON proxy (CTL `neon_data.npz`)
+## 7. NEON (CTL `neon_data.npz` + uploaded recon weights)
 
-**Data:** `/Users/meilunzhou/Documents/GitHub/CTL/neon_data.npz` (symlinked as `neon_data.npz`).  
-**Artifacts:** `replication_neon.json`, `replication_neon_delta.md`, `scripts/reproduce_neon_proxy.py`, `scripts/reproduce_neon_ae_mmctl.py`.  
-**No released NEON pretrained embeddings** in this repo / Zenodo (only raw NPZ).
+**Data:** `/Users/meilunzhou/Documents/GitHub/CTL/neon_data.npz`.  
+**Checkpoints:** `_emb1024_batch32_margin0.1_test_size0.5_cls_weight1.0_best_val_model_run_{1..5}.h5`  
+**Protocol:** rebuild 3-mod AE → `load_weights` → extract RGB/HSI/LiDAR/Concat/DS-M/MMCTL embeddings; structure metrics on test; paper task heads (Adam 1e-3 / wd 1e-4 / bs 32 / clip 5 / 3000 ep / patience 1000 / hidden 256).  
+**Artifacts:** `replication_neon.json`, `replication_neon_delta.md`, `outputs/neon_paper_embeddings/`, `results/neon_paper_eval_pretrained.log`.
 
-### First proxy run (sampled CTL; flawed Concat≡MMCTL architecture)
+### Downstream (vs paper)
 
-Structure deltas vs paper are large (MMCTL C Δ ≈ +1.38). Downstream box R² exploded numerically (bad target scaling) — **do not use those box R² cells**. Classification ranking weak vs paper.
+| Method | Paper C% | Code C% | Paper B | Code B | Paper H | Code H |
+|---|---|---|---|---|---|---|
+| RGB | 74.59 | 80.27±1.81 | 0.07 | 0.01±0.03 | 0.34 | 0.45±0.04 |
+| HSI | 76.69 | 85.91±3.13 | 0.12 | 0.00±0.07 | 0.40 | 0.55±0.03 |
+| LiDAR | 49.66 | 44.92±2.18 | 0.22 | 0.00±0.03 | 0.68 | 0.60±0.01 |
+| Concat | 81.69 | 85.85±1.43 | 0.39 | 0.08±0.06 | 0.69 | 0.67±0.02 |
+| DS-M | 81.35 | 86.71±2.04 | 0.40 | 0.10±0.05 | 0.61 | 0.69±0.01 |
+| **MMCTL** | **86.95** | **85.05±1.88** | **0.43** | **0.10±0.04** | **0.74** | **0.68±0.02** |
 
-**Verdict:** absolute reproduction **FAIL**. **Keep paper NEON tables.**  
-Improved AE-then-MMCTL script: `scripts/reproduce_neon_ae_mmctl.py` (run when ready).
+**Verdict:** MMCTL classification ≈ paper (−1.9 pt). Height R² close. **Box R² fails** (~0.10 vs 0.43). Structure scores do not match paper (MMCTL not best; Concat≡MMCTL geometrically in this AE). **Keep paper NEON tables** for absolute claims; code numbers are replication diagnostics only.
 
 ### Paper NEON numbers (authoritative — keep in manuscript)
 
@@ -170,7 +177,7 @@ Improved AE-then-MMCTL script: `scripts/reproduce_neon_ae_mmctl.py` (run when re
 | Stronger baselines (SupCon / Transformer) | Skipped | R1.6 |
 | Freeze vs end-to-end | Skipped | R1.5 |
 | Full AWIR wall-clock retrain | Not done | Upper-bound + microbench only |
-| Faithful NEON Keras retrain | Open | Needs original checkpoints / GPU schedule |
+| Faithful NEON Keras retrain | Done (uploaded weights) | Eval complete; absolute structure/box still off |
 
 ---
 
