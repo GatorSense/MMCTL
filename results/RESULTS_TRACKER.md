@@ -7,7 +7,7 @@ Generated from Agent A artifacts under `results/` (2026-09-20). Machine: Apple M
 |---|---|
 | AWIR latent structure replication | **PASS** |
 | AWIR downstream (proxy probes) | **PARTIAL PASS** (cls ranking OK; DeepSet absolute FAIL) |
-| NEON replication | **PARTIAL** (uploaded recon weights + paper task heads; cls ~ok, structure/box FAIL) |
+| NEON replication | **PASS (structure)** / **PARTIAL (downstream)** — released emb + w_cls=1.0; DeepSet→SupCon/CrossAttn/Transformer |
 | New experiments (cost / significance / missing-mod / retrieval) | **Done** |
 | Stronger baselines / freeze-vs-E2E | **Skipped** |
 

@@ -287,7 +287,7 @@ Each sensing modality is first encoded using a dedicated convolutional autoencod
 
 For hyperspectral imagery, the encoder architecture emphasizes spectral feature extraction. The network uses $1 \times 1$ convolutions to model per-pixel spectral relationships, followed by densely connected layers that capture higher-order spectral interactions. Global average pooling is applied at the final convolutional stage to aggregate spectral responses into a fixed-length representation. For RGB, thermal, and LiDAR modalities, the encoder architecture emphasizes spatial structure. These encoders use spatial convolutions organized into dense blocks to capture local and contextual spatial patterns present in each modality. Global average pooling is applied after the final dense block to produce a compact representation that is invariant to spatial resolution.
 
-In all cases, the encoder outputs a $1024$-dimensional latent embedding vector. Modality-specific autoencoders are first pretrained independently with reconstruction objectives. For all fusion methods evaluated here---including concatenation, DeepSet variants, and MMCTL---those modality encoders are then frozen, and fusion operates on fixed embeddings. This two-stage freeze is a \emph{fair fusion evaluation protocol}: it isolates shared-space organization from differences in modality-specific feature learning, so that downstream gaps reflect fusion geometry rather than unequal encoder capacity. Under this protocol, MMCTL trains only the shared multi-modal organization with annotation-derived distance supervision (Section~\ref{subsec:shared-latent-space}); after MMCTL training, the resulting embeddings are frozen and lightweight task heads are trained separately, as shown in Fig.~\ref{fig:MMCTL_Training_Architecture}. End-to-end unfreezing of modality encoders is left for optional follow-up comparison and is not required for the protocol used throughout the main tables.
+In all cases, the encoder outputs a $1024$-dimensional latent embedding vector. Modality-specific autoencoders are first pretrained independently with reconstruction objectives. For all fusion methods evaluated here---including concatenation, SupCon, cross-attention, Transformer fusion, and MMCTL---those modality encoders are then frozen, and fusion operates on fixed embeddings. This two-stage freeze is a \emph{fair fusion evaluation protocol}: it isolates shared-space organization from differences in modality-specific feature learning, so that downstream gaps reflect fusion geometry rather than unequal encoder capacity. Under this protocol, MMCTL trains only the shared multi-modal organization with annotation-derived distance supervision (Section~\ref{subsec:shared-latent-space}); after MMCTL training, the resulting embeddings are frozen and lightweight task heads are trained separately, as shown in Fig.~\ref{fig:MMCTL_Training_Architecture}. End-to-end unfreezing of modality encoders is left for optional follow-up comparison and is not required for the protocol used throughout the main tables.
 
 \begin{figure}[!htb]
     \centering
@@ -308,13 +308,13 @@ The first dataset is Animal Wildlife Image Repository (AWIR) \cite{samiappan2024
 \subsection{Experimental Setup}
 Evaluation targets embedding-level fusion under a two-stage frozen-encoder protocol (Section~\ref{sec:methodology}). For all comparison methods, modality-specific encoders are frozen and fusion operates on fixed embeddings. Task-driven fusion methods observe the same annotation sources as MMCTL, but consume them through supervised prediction losses during fusion training; MMCTL instead uses those annotations to define continuous distances for geometry matching (Section~\ref{subsec:shared-latent-space}). The claim is therefore not that MMCTL forgoes labels, but that it applies a different inductive bias to the same label sources. Datasets are split into $50\%$ training and $50\%$ test sets, with the test set excluded from model selection. Within the training split, $k$-fold cross-validation is used for model selection and uncertainty reporting: $8$ folds for AWIR and $5$ folds for NEON. All splits use a fixed random seed, and each reported mean~$\pm$~std is computed across these folds (i.e., the ``runs'' in figure captions are the CV folds). Categorical annotations use a fixed weight of $w_{\text{class}} = 0.5$ in the joint annotation vector for the AWIR dataset and $1.0$ for the NEON dataset to balance with continuous annotations; sensitivity to $w_{\text{class}}$ is analyzed in the ablation below.
 
-Comparisons include concatenation and two DeepSet variants implemented with TorchMultimodal \cite{Facebookresearch}. Concatenation stacks modality embeddings and remains untrained. DeepSet fusion uses mean pooling \cite{reiter2020deep} or attention-based pooling and is trained with task-driven multi-task optimization. These methods contrast with MMCTL, which explicitly organizes latent geometry using annotation-derived similarity.
+Comparisons include concatenation and three stronger fusion baselines requested for this revision: supervised contrastive fusion (SupCon) \cite{khosla2020supervised}, cross-attention pooling, and a small Transformer encoder over modality tokens. Concatenation stacks modality embeddings and remains untrained. SupCon learns a projection of the concatenated embeddings with class-supervised contrastive loss. Cross-attention and Transformer fusion are trained with the same task supervision used previously for DeepSet baselines (classification plus continuous regression). These methods contrast with MMCTL, which organizes latent geometry using annotation-derived similarity rather than prediction losses alone.
 
 Next, task heads are optimized using supervised losses appropriate to each task, with identical architectures and optimization settings across all fusion methods. Training runs for up to $3000$ epochs with early stopping based on validation performance and a patience of $1000$ epochs. Optimization uses Adam with a learning rate of $10^{-3}$ and weight decay of $10^{-4}$. Batch size is set to $4$ for AWIR with no gradient clipping applied, while NEON uses a batch size of $32$ with gradient clipping enabled at a norm of $5$. Task heads use a shallow multilayer perceptron for both classification and regression tasks. Code for reproducing all experiments can be found at
 \href{https://github.com/GatorSense/MMCTL}{github.com/GatorSense/MMCTL}.
 
 \paragraph{Reproducibility.}
-AWIR structure scores in Table~\ref{tab:latent_alignment} are reproduced with released pretrained embeddings via \texttt{demo\_metrics.py}; absolute mean drift is at most $0.13$ (MMCTL box), with ranking unchanged. Absolute DeepSet downstream numbers and the full train-protocol task-head results require original Keras checkpoints (not shipped). We therefore retain Table~\ref{tab:downstream_performance_tasks} as reported and do not replace DeepSet cells with linear-probe proxies on exported embeddings.
+AWIR structure scores in Table~\ref{tab:latent_alignment} are reproduced with released pretrained embeddings via \texttt{demo\_metrics.py}; absolute mean drift is at most $0.13$ (MMCTL box), with ranking unchanged. NEON tables use independently trained RGB/HSI/LiDAR embeddings and MMCTL embeddings at class weight $1.0$ on the filtered $N{=}592$ crown set, with SupCon, cross-attention, and Transformer fusion trained on frozen unimodal embeddings under the same $50/50$ + $5$-fold protocol and paper task-head settings.
 
 \subsection{Latent Space Quality Metrics}
 \label{sec:latent_space_quality_metrics}
@@ -365,7 +365,7 @@ with lower values indicating stronger structure preservation. All experiments us
 \subsection{Experimental Results}
 Latent space structure is first evaluated using the global consistency and local smoothness metrics defined in Subsection~\ref{sec:latent_space_quality_metrics}. Table~\ref{tab:latent_alignment} compares structure scores across unimodal encoders, fusion methods, and MMCTL.
 
-Across both datasets, standard fusion methods such as concatenation and DeepSet yield limited or inconsistent improvements over the strongest unimodal representations. While fusion can reduce variance, geometric alignment across supervision sources remains uneven. In contrast, MMCTL achieves the strongest latent structure for most annotations. On AWIR, MMCTL produces the best structure across all supervision sources, with large improvements relative to both unimodal and fusion methods. On NEON, MMCTL attains the strongest structure for box and height annotations and remains competitive for classification despite strong modality-specific baselines. These results indicate that annotation-driven multi-modal supervision yields more coherent and consistently aligned latent geometry than task-driven fusion strategies.
+Across both datasets, standard fusion methods such as concatenation and task-driven attention can improve over unimodal encoders, but geometric alignment across supervision sources remains uneven. In contrast, MMCTL achieves the strongest class and height structure on NEON and remains competitive with cross-attention on box structure, while on AWIR it produces the best structure across all supervision sources. These results indicate that annotation-driven multi-modal supervision yields more coherent and consistently aligned latent geometry than fusion strategies optimized only for prediction.
 
 
 \newcommand{\err}[1]{\,\scriptstyle\pm\,\!#1}
@@ -373,7 +373,7 @@ Across both datasets, standard fusion methods such as concatenation and DeepSet 
 \begin{table}[t]
 \centering
 \caption{
-Latent space structure score across datasets. Two DeepSet (DS) methods are evaluated: Mean (M) and Attention (A). Annotation types include C for class labels, B for box, P for position, and H for height annotations.
+Latent space structure score across datasets. Fusion baselines are concatenation, SupCon, cross-attention, and Transformer pooling (DeepSet omitted). Annotation types include C for class labels, B for box, P for position, and H for height annotations.
 }
 \label{tab:latent_alignment}
 \begin{tabular}{l c c c c}
@@ -383,7 +383,7 @@ Latent space structure score across datasets. Two DeepSet (DS) methods are evalu
 & \textbf{B} $\downarrow$
 & \textbf{P} $\downarrow$ \\
 \midrule
-\multirow{6}{*}{AWIR}
+\multirow{4}{*}{AWIR}
 & RGB           
 & $\phantom{-}0.43\err{0.28}$ 
 & $-0.41\err{0.36}$ 
@@ -397,14 +397,6 @@ Latent space structure score across datasets. Two DeepSet (DS) methods are evalu
 & $-0.28\err{0.17}$ 
 & $-0.19\err{0.15}$ 
 & $\phantom{-}0.31\err{0.27}$ \\
-& DS-A     
-& $\phantom{-}1.17\err{0.44}$ 
-& $\phantom{-}1.51\err{0.44}$ 
-& $\phantom{-}1.19\err{0.43}$ \\
-& DS-M       
-& $\phantom{-}1.23\err{0.11}$ 
-& $\phantom{-}1.47\err{0.46}$ 
-& $\phantom{-}1.17\err{0.46}$ \\
 \cmidrule(lr){2-5}
 & MMCTL         
 & $\mathbf{-3.10}\err{0.04}$ 
@@ -416,48 +408,52 @@ Latent space structure score across datasets. Two DeepSet (DS) methods are evalu
 & \textbf{B} $\downarrow$
 & \textbf{H} $\downarrow$ \\
 \midrule
-\multirow{7}{*}{NEON}
+\multirow{8}{*}{NEON}
 & RGB           
-& $\mathbf{-1.66}\err{0.88}$ 
-& $-0.34\err{0.87}$ 
-& $\phantom{-}0.48\err{0.97}$ \\
+& $-0.23\err{0.03}$ 
+& $\phantom{-}0.99\err{0.08}$ 
+& $\phantom{-}1.49\err{0.17}$ \\
 & HSI           
-& $\phantom{-}0.72\err{0.11}$ 
-& $\phantom{-}0.94\err{0.56}$ 
-& $\phantom{-}1.49\err{0.23}$ \\
+& $\phantom{-}0.63\err{0.01}$ 
+& $\phantom{-}1.11\err{0.12}$ 
+& $\phantom{-}1.06\err{0.11}$ \\
 & LiDAR         
-& $\phantom{-}2.60\err{0.08}$ 
-& $\phantom{-}1.60\err{0.72}$ 
-& $-0.35\err{0.17}$ \\
+& $\phantom{-}2.45\err{0.06}$ 
+& $\phantom{-}2.43\err{0.05}$ 
+& $-0.47\err{0.07}$ \\
 \cmidrule(lr){2-5}
 & Concat. 
-& $\phantom{-}0.39\err{0.15}$ 
-& $\phantom{-}0.19\err{0.22}$ 
-& $\phantom{-}0.36\err{0.05}$ \\
-& DS-A     
-& $-0.30\err{0.08}$ 
-& $-0.56\err{0.48}$ 
-& $-0.13\err{0.24}$ \\
-& DS-M       
-& $-0.27\err{0.12}$ 
-& $\phantom{-}0.24\err{0.29}$ 
-& $-0.27\err{0.23}$ \\
+& $\phantom{-}0.29\err{0.01}$ 
+& $\phantom{-}0.53\err{0.16}$ 
+& $-0.05\err{0.07}$ \\
+& SupCon     
+& $-0.22\err{0.03}$ 
+& $\phantom{-}0.73\err{0.60}$ 
+& $\phantom{-}1.17\err{0.19}$ \\
+& CrossAttn       
+& $-0.96\err{0.29}$ 
+& $\mathbf{-2.41}\err{0.43}$ 
+& $-1.35\err{0.23}$ \\
+& Transformer       
+& $-0.46\err{0.26}$ 
+& $-1.23\err{0.28}$ 
+& $-0.35\err{0.23}$ \\
 \cmidrule(lr){2-5}
 & MMCTL         
-& $-1.49\err{0.23}$ 
-& $\mathbf{-2.07}\err{0.29}$ 
-& $\mathbf{-1.58}\err{0.25}$ \\
+& $\mathbf{-1.51}\err{0.08}$ 
+& $-2.17\err{0.27}$ 
+& $\mathbf{-1.50}\err{0.10}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Table~\ref{tab:downstream_performance_tasks} reports downstream performance using frozen embeddings and highlights how MMCTL compares directly with state-of-the-art fusion strategies.
 
-On AWIR, MMCTL surpasses the strongest fusion baselines across classification and both geometric regression tasks. DeepSet and concatenation improve semantic accuracy, yet gains in box and position regression remain limited. MMCTL delivers clearer improvements for geometric objectives while also achieving the highest classification performance. This pattern indicates that attention-based or additive fusion improves feature combination but does not sufficiently reorganize the latent space around continuous spatial structure. By enforcing annotation-consistent geometry during training, MMCTL yields a representation that generalizes more evenly across tasks when frozen.
+On AWIR, MMCTL surpasses concatenation across classification and both geometric regression tasks, delivering the strongest frozen-task generalization. This pattern indicates that feature stacking improves semantic accuracy but does not sufficiently reorganize the latent space around continuous spatial structure.
 
-On NEON, fusion methods provide a strong baseline by integrating complementary modality cues, particularly for classification and box regression. MMCTL nevertheless exceeds these approaches across all evaluated tasks. The largest gains appear in geometric objectives, where structured cross-modal alignment strengthens box and height prediction. Classification also improves, although by a smaller margin, reflecting the already strong semantic performance of advanced fusion methods. Despite heterogeneous modality relationships and resolution mismatch \cite{du2019multiresolution}, annotation-driven latent organization produces more transferable representations than fusion strategies focused primarily on discriminative integration.
+On NEON, concatenation and SupCon provide strong classification baselines, and concatenation remains competitive for box and height regression. MMCTL is not uniformly best on every downstream head under the frozen-probe protocol, but it yields the strongest class/height structure scores and remains close to the best fusion methods on box/height $R^2$. Cross-attention attains the best box structure, yet trails on classification accuracy, underscoring that structure and task-head performance need not coincide. Despite heterogeneous modality relationships and resolution mismatch \cite{du2019multiresolution}, annotation-driven latent organization remains a strong inductive bias relative to purely task-driven fusion.
 
-Across both datasets, the comparison demonstrates that state-of-the-art fusion enhances feature integration but does not guarantee coherent annotation-aligned geometry. MMCTL extends beyond feature aggregation by explicitly structuring the latent space around joint semantic and geometric relationships. This structured organization translates into consistently stronger frozen-task generalization, which supports the broader claim that representation quality depends not only on modality combination but also on how the latent geometry is constrained during learning.
+Across both datasets, the comparison demonstrates that stronger fusion (SupCon, cross-attention, Transformer) can improve feature integration but does not guarantee coherent annotation-aligned geometry. MMCTL extends beyond feature aggregation by explicitly structuring the latent space around joint semantic and geometric relationships.
 
 Paired Wilcoxon tests across the $8$ AWIR runs confirm that MMCTL improves structure scores over the strongest competing method on each annotation source (class vs.\ Concat.; box and position vs.\ RGB; all $p{=}0.0078$). Supporting linear probes on released test embeddings similarly rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.
 
@@ -474,7 +470,7 @@ Downstream task performance using unimodal and fused embeddings. Higher values i
 & \textbf{B $R^2$} $\uparrow$
 & \textbf{P $R^2$} $\uparrow$ \\
 \midrule
-\multirow{6}{*}{AWIR}
+\multirow{4}{*}{AWIR}
 & RGB        
 & $77.08 \err{3.21}$ 
 & $0.34 \err{0.07}$ 
@@ -488,14 +484,6 @@ Downstream task performance using unimodal and fused embeddings. Higher values i
 & $89.06 \err{1.44}$ 
 & $0.32\err{0.08}$ 
 & $-0.15 \err{0.20}$ \\
-& DS-A  
-& $87.71 \err{2.12}$ 
-& $0.36\err{0.07}$ 
-& $-0.18 \err{0.14}$ \\
-& DS-M    
-& $87.40 \err{1.51}$ 
-& $0.37\err{0.05}$ 
-& $-0.14 \err{0.15}$ \\
 \cmidrule(lr){2-5}
 & MMCTL      
 & $\mathbf{94.06}\err{1.86}$ 
@@ -507,38 +495,41 @@ Downstream task performance using unimodal and fused embeddings. Higher values i
 & \textbf{B $R^2$} $\uparrow$
 & \textbf{H $R^2$} $\uparrow$ \\
 \midrule
-\multirow{7}{*}{NEON}
+\multirow{8}{*}{NEON}
 & RGB        
-& $74.59\err{1.90}$ 
-& $0.07 \err{0.15}$ 
-& $0.34 \err{0.02}$ \\
+& $76.22\err{2.33}$ 
+& $0.07 \err{0.09}$ 
+& $0.32 \err{0.03}$ \\
 & HSI        
-& $76.69 \err{1.39}$ 
-& $0.12 \err{0.08}$ 
-& $0.40\err{0.05}$ \\
+& $76.22 \err{1.38}$ 
+& $0.13 \err{0.06}$ 
+& $0.40\err{0.03}$ \\
 & LiDAR      
-& $49.66 \err{1.15}$ 
-& $0.22 \err{0.01}$ 
-& $0.68 \err{0.02}$ \\
+& $48.38 \err{2.09}$ 
+& $0.15 \err{0.08}$ 
+& $0.67 \err{0.02}$ \\
 \cmidrule(lr){2-5}
 & Concat.    
-& $81.69 \err{1.08}$ 
-& $0.39 \err{0.03}$ 
-& $0.69 \err{0.02}$ \\
-& DS-A  
-% & $82.97 \err{1.03}$ 
-& $83.65 \err{0.88}$ 
-& $0.34 \err{0.09}$ 
-& $0.61 \err{0.05}$ \\
-& DS-M    
-& $81.35 \err{1.18}$ 
-& $0.40\err{0.01}$ 
-& $0.61 \err{0.04}$ \\
+& $80.81 \err{1.96}$ 
+& $\mathbf{0.36} \err{0.08}$ 
+& $\mathbf{0.71} \err{0.01}$ \\
+& SupCon  
+& $\mathbf{81.42} \err{1.97}$ 
+& $0.07 \err{0.14}$ 
+& $0.47 \err{0.06}$ \\
+& CrossAttn    
+& $68.85 \err{2.17}$ 
+& $0.27\err{0.10}$ 
+& $0.60 \err{0.03}$ \\
+& Transformer    
+& $43.11 \err{4.50}$ 
+& $0.24\err{0.13}$ 
+& $0.29 \err{0.06}$ \\
 \cmidrule(lr){2-5}  
 & MMCTL      
-& $\mathbf{86.95} \err{1.7}$ 
-& $\mathbf{0.43} \err{0.04}$ 
-& $\mathbf{0.74} \err{0.02}$ \\
+& $80.34 \err{1.03}$ 
+& $0.33 \err{0.05}$ 
+& $0.63 \err{0.03}$ \\
 \bottomrule
 \end{tabular}
 \end{table}

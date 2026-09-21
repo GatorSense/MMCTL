@@ -481,8 +481,8 @@ def main():
             mods_va,
             y_tv[tr],
             y_tv[va],
-            bf_tv[tr],
-            bf_tv[va],
+            box_tv[tr],
+            box_tv[va],
             h_tv[tr],
             h_tv[va],
             args.fusion_epochs,
@@ -500,8 +500,8 @@ def main():
             mods_va,
             y_tv[tr],
             y_tv[va],
-            bf_tv[tr],
-            bf_tv[va],
+            box_tv[tr],
+            box_tv[va],
             h_tv[tr],
             h_tv[va],
             args.fusion_epochs,
@@ -527,6 +527,7 @@ def main():
             print(f"  eval {name}...", flush=True)
             m = structure_raw(zte, y_te, bf_te, h_te, seed=40 + run)
             struct_rows.append({"run": run, "method": name, **m})
+            # Downstream box target = box_info (continuous geometry), not triplet k-means features
             pr = paper_task_heads(
                 ztr,
                 zva,
@@ -534,9 +535,9 @@ def main():
                 y_tv[tr],
                 y_tv[va],
                 y_te,
-                bf_tv[tr],
-                bf_tv[va],
-                bf_te,
+                box_tv[tr],
+                box_tv[va],
+                box_te,
                 h_tv[tr],
                 h_tv[va],
                 h_te,
