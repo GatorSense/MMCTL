@@ -194,6 +194,12 @@ def main():
     p.add_argument("--npz_path", default=NEON_DEFAULT)
     p.add_argument("--save_root", default=os.path.join(ROOT, "outputs", "neon_paper_recon"))
     p.add_argument("--emb_dir", default=os.path.join(ROOT, "outputs", "neon_paper_embeddings"))
+    p.add_argument(
+        "--ckpt_template",
+        default=None,
+        help="Checkpoint path template with {run}, e.g. "
+        "'_emb1024_..._best_val_model_run_{run}.h5'. Relative paths are from repo root.",
+    )
     p.add_argument("--embedding_dimension", type=int, default=1024)
     p.add_argument("--batch_size", type=int, default=32)
     p.add_argument("--epochs", type=int, default=1000, help="Recon/MMCTL epochs (paper: 1000)")
@@ -313,8 +319,14 @@ def main():
     struct_rows, down_rows = [], []
 
     for run, (tr_idx, va_idx) in enumerate(folds, start=1):
-        ckpt = os.path.join(args.save_root, f"w_cls1p00_best_val_model_run_{run}.weights.h5")
+        if args.ckpt_template:
+            ckpt = args.ckpt_template.format(run=run)
+            if not os.path.isabs(ckpt):
+                ckpt = os.path.join(ROOT, ckpt)
+        else:
+            ckpt = os.path.join(args.save_root, f"w_cls1p00_best_val_model_run_{run}.weights.h5")
         print(f"\n=== fold {run}/{args.runs} ===", flush=True)
+        print(f"checkpoint: {ckpt}", flush=True)
 
         # Always rebuild architecture for this fold's shapes
         sample_rgb = X_rgb_tv[0].shape
