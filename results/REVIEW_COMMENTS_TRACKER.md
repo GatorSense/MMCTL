@@ -51,7 +51,7 @@ Status key: **DONE** | **PARTIAL** | **OPEN** | **DEFERRED** | **N/A**
 | **NEON structure table** | **PROXY — absolute FAIL** | Used CTL `neon_data.npz`. Keep paper numbers. See `replication_neon_delta.md`. Improved script: `reproduce_neon_ae_mmctl.py` |
 | **NEON downstream table** | **PROXY — absolute FAIL** | Same; keep paper numbers |
 | NEON significance | **OPEN** | Needs faithful repro first |
-| Stronger baseline (R1.6) | **OPEN** | Recommended before resubmit |
+| Stronger baseline (R1.6) | **PARTIAL** | NEON: SupCon/CrossAttn/Transformer in tables. AWIR: DeepSet removed; new baselines need train embeddings (test-only proxy FAIL ~40%) |
 | Freeze vs E2E (R1.5) | **OPEN** | Recommended if compute allows |
 | Cross-region transfer | **OPEN** | Alternative/addition to missing-mod for R2.4 |
 | PDF ≤8 pages verified | **OPEN** | Estimate ~7.5–8; need local `pdflatex` compile |
