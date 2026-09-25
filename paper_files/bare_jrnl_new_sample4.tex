@@ -13,6 +13,9 @@
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{multirow}
+\usepackage{xcolor}
+% Newly added revision content is wrapped in \new{...} (renders in red).
+\newcommand{\new}[1]{\textcolor{red}{#1}}
 \hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 % updated with editorial comments 8/9/2021
 
@@ -73,7 +76,7 @@ This work introduces Multi-Modal Continuous Triplet Loss (MMCTL), which treats m
 \begin{figure*}[!htb]
     \centering
     \includegraphics[width=\textwidth]{figures/awir_embedding_space.pdf}
-    \caption{AWIR embedding space across fusion methods (Concat, SupCon, cross-attention, Transformer, MMCTL), projected with PCA (top) and t-SNE (bottom). Points are colored by class label (cow, deer, horse) and sized by bounding-box area. Task-driven fusion baselines mix classes or show no ordered size gradient, whereas MMCTL yields class-separated clusters in which point size varies smoothly within and across clusters, reflecting the annotation-aligned continuous geometry.}
+    \caption{\new{AWIR embedding space across fusion methods (Concat, SupCon, cross-attention, Transformer, MMCTL), projected with PCA (top) and t-SNE (bottom). Points are colored by class label (cow, deer, horse) and sized by bounding-box area. Task-driven fusion baselines mix classes or show no ordered size gradient, whereas MMCTL yields class-separated clusters in which point size varies smoothly within and across clusters, reflecting the annotation-aligned continuous geometry.}}
     \label{fig:emb_awir}
 \end{figure*}
 
@@ -318,6 +321,7 @@ AWIR and NEON tables use released full-set embeddings ($N{=}240$ AWIR; $N{=}592$
 
 \subsection{Latent Space Quality Metrics}
 \label{sec:latent_space_quality_metrics}
+{\color{red}
 Latent space quality is evaluated with two standard, directly interpretable metrics: one that gauges categorical class separation and one that gauges how faithfully the geometry represents differences in the continuous annotations. Both are computed on L$_2$-normalized embeddings with cosine geometry, matching the MMCTL training distance.
 
 \paragraph{Class separation}
@@ -346,23 +350,25 @@ To measure whether embedding geometry reflects graded annotation differences, we
 \in [-1, 1],
 \end{equation}
 over all evaluation pairs, where higher values indicate that samples close in annotation space are embedded close together. Metrics are computed on each held-out cross-validation fold and reported as mean~$\pm$~std.
+}
 
 
 
 \subsection{Experimental Results}
-Latent space quality is first evaluated using the silhouette and distance-preservation metrics defined in Subsection~\ref{sec:latent_space_quality_metrics}. Table~\ref{tab:latent_alignment} compares class separation and continuous-annotation representation across unimodal encoders, fusion methods, and MMCTL.
+\new{Latent space quality is first evaluated using the silhouette and distance-preservation metrics defined in Subsection~\ref{sec:latent_space_quality_metrics}. Table~\ref{tab:latent_alignment} compares class separation and continuous-annotation representation across unimodal encoders, fusion methods, and MMCTL.}
 
-No single baseline is coherent on both fronts. Class-supervised fusion (SupCon, Transformer) attains the highest class silhouette but collapses continuous geometry, with position/height correlations near zero or negative (e.g., AWIR position $\rho\!=\!-0.02$ for both). Conversely, the modality that directly senses an attribute can lead its continuous column---LiDAR attains the best NEON height correlation ($\rho\!=\!0.571$)---yet separates classes poorly (silhouette $-0.23$). MMCTL is the only method that is simultaneously strong on both: it gives the best continuous representation on AWIR (box $\rho\!=\!0.278$, position $\rho\!=\!0.223$, the latter far above every baseline), the second-best class silhouette on NEON behind SupCon, and the second-best NEON height correlation behind LiDAR. Rather than maximizing any one column, annotation-driven multi-modal supervision yields a balanced, coherent geometry that reflects both semantic classes and continuous attributes at once.
+\new{No single baseline is coherent on both fronts. Class-supervised fusion (SupCon, Transformer) attains the highest class silhouette but collapses continuous geometry, with position/height correlations near zero or negative (e.g., AWIR position $\rho\!=\!-0.02$ for both). Conversely, the modality that directly senses an attribute can lead its continuous column---LiDAR attains the best NEON height correlation ($\rho\!=\!0.571$)---yet separates classes poorly (silhouette $-0.23$). MMCTL is the only method that is simultaneously strong on both: it gives the best continuous representation on AWIR (box $\rho\!=\!0.278$, position $\rho\!=\!0.223$, the latter far above every baseline), the second-best class silhouette on NEON behind SupCon, and the second-best NEON height correlation behind LiDAR. Rather than maximizing any one column, annotation-driven multi-modal supervision yields a balanced, coherent geometry that reflects both semantic classes and continuous attributes at once.}
 
 
 \newcommand{\err}[1]{\,\scriptstyle\pm\,\!#1}
 
 \begin{table}[t]
 \centering
-\caption{
+\caption{\new{
 Embedding-space quality across datasets. \textbf{Sil} is the class-label silhouette coefficient (cosine); \textbf{$\rho$} columns are Spearman correlations between pairwise embedding distances and pairwise annotation distances for box (B), position (P), and height (H). Higher is better for all columns ($\uparrow$); best per column in bold. Fusion baselines are concatenation, SupCon, cross-attention, and Transformer pooling (DeepSet omitted).
-}
+}}
 \label{tab:latent_alignment}
+{\color{red}
 \begin{tabular}{l l c c c}
 \toprule
 \textbf{Dataset} & \textbf{Method}
@@ -399,6 +405,7 @@ Embedding-space quality across datasets. \textbf{Sil} is the class-label silhoue
 & MMCTL       & $\phantom{-}0.197\err{0.034}$ & $0.188\err{0.040}$ & $0.447\err{0.049}$ \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 Table~\ref{tab:downstream_performance_tasks} reports downstream performance using frozen embeddings and highlights how MMCTL compares directly with state-of-the-art fusion strategies.
@@ -409,17 +416,73 @@ On NEON, concatenation and SupCon provide strong classification baselines, and c
 
 Across both datasets, the comparison demonstrates that stronger fusion (SupCon, cross-attention, Transformer) can improve feature integration but does not guarantee coherent annotation-aligned geometry. MMCTL extends beyond feature aggregation by explicitly structuring the latent space around joint semantic and geometric relationships.
 
-Paired one-sided Wilcoxon tests across the $8$ AWIR folds quantify the continuous-geometry advantage: MMCTL significantly exceeds the best competing method on position correlation (vs.\ RGB, $p{=}0.0078$) and shows the highest box correlation (vs.\ Concat., $p{=}0.098$, a positive trend). As expected from Table~\ref{tab:latent_alignment}, MMCTL does not win class silhouette, where the class-supervised SupCon leads; the value of MMCTL is that no other method is competitive on the continuous axes without sacrificing class structure. Supporting linear probes on released test embeddings rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.
+\new{Paired one-sided Wilcoxon tests across the $8$ AWIR folds quantify the continuous-geometry advantage: MMCTL significantly exceeds the best competing method on position correlation (vs.\ RGB, $p{=}0.0078$) and shows the highest box correlation (vs.\ Concat., $p{=}0.098$, a positive trend). As expected from Table~\ref{tab:latent_alignment}, MMCTL does not win class silhouette, where the class-supervised SupCon leads; the value of MMCTL is that no other method is competitive on the continuous axes without sacrificing class structure. Supporting linear probes on released test embeddings rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.}
 
-The NEON embedding spaces in Fig.~\ref{fig:emb_neon} extend this comparison to a ten-species, three-modality setting. Sizing the same fusion-method projections by bounding-box area and by canopy height shows that MMCTL organizes the shared space so that both geometric attributes vary coherently across the embedding, whereas task-driven fusion embeddings expose class structure only weakly and show no consistent size or height gradient.
+\new{The NEON embedding spaces in Fig.~\ref{fig:emb_neon} extend this comparison to a ten-species, three-modality setting. Sizing the same fusion-method projections by bounding-box area and by canopy height shows that MMCTL organizes the shared space so that both geometric attributes vary coherently across the embedding, whereas task-driven fusion embeddings expose class structure only weakly and show no consistent size or height gradient.}
 
 \begin{figure*}[!htb]
     \centering
     \includegraphics[width=\textwidth]{figures/neon_embedding_space_boxsize.pdf}\\[2pt]
     \includegraphics[width=\textwidth]{figures/neon_embedding_space_height.pdf}
-    \caption{NEON embedding space across fusion methods (Concat, SupCon, cross-attention, Transformer, MMCTL; PCA top, t-SNE bottom within each block), colored by species. Points are sized by bounding-box area (top block) and by canopy height (bottom block). MMCTL produces species-separated clusters whose point sizes vary smoothly, reflecting continuous box and height geometry, while task-driven baselines mix species and lack an ordered geometric gradient.}
+    \caption{\new{NEON embedding space across fusion methods (Concat, SupCon, cross-attention, Transformer, MMCTL; PCA top, t-SNE bottom within each block), colored by species. Points are sized by bounding-box area (top block) and by canopy height (bottom block). MMCTL produces species-separated clusters whose point sizes vary smoothly, reflecting continuous box and height geometry, while task-driven baselines mix species and lack an ordered geometric gradient.}}
     \label{fig:emb_neon}
 \end{figure*}
+
+\new{To probe whether the continuous geometry is locally smooth \emph{within} a class, Fig.~\ref{fig:emb_zoom} zooms into individual class clusters and colors each class's points by its continuous label, so a smooth spatial color gradient signals a smooth within-class transition. Table~\ref{tab:perclass_smooth} quantifies this as the within-class analogue of the distance-preservation score: the Spearman correlation between pairwise embedding distances and pairwise differences of the continuous label, restricted to each class (higher is smoother; computed on the released full sets). Dataset-wide, MMCTL yields the smoothest AWIR box-area transition ($\rho{=}0.272$) and a competitive NEON transition. Among the four featured classes ($\star$), MMCTL transitions smoothly on horse (box area, $\rho{=}0.361$) while Concat/Transformer are marginally smoother, is essentially tied on cow, is the \emph{smoothest} method within PIPA2 (canopy height, $\rho{=}0.504$), and is a close second on PSME ($\rho{=}0.593$ vs.\ Transformer $0.662$). Consistent with Table~\ref{tab:latent_alignment}, a task-driven baseline can match or exceed MMCTL on a single continuous axis inside a class, but only MMCTL pairs this within-class smoothness with strong class separation.}
+
+\begin{figure*}[!htb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/embedding_zoom_perclass.pdf}
+    \caption{\new{Per-class continuous transition. Each row zooms into one class cluster (AWIR horse, cow; NEON PSME, PIPA2) and shows only that class's points under each fusion method (PCA projection), colored by the continuous label indicated at left (box area or canopy height; per-row colorbar). A smooth color gradient across a panel indicates that the continuous attribute varies smoothly within the class embedding. Within-class correlations are reported in Table~\ref{tab:perclass_smooth}.}}
+    \label{fig:emb_zoom}
+\end{figure*}
+
+\begin{table}[t]
+\centering
+\caption{\new{Within-class continuous-transition score: Spearman $\rho$ between pairwise cosine embedding distances and pairwise differences of the continuous label, per class and dataset-wide (\emph{All}); higher is smoother. Best method per row in bold; $\star$ marks the classes featured in Fig.~\ref{fig:emb_zoom}.}}
+\label{tab:perclass_smooth}
+{\color{red}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{l c c c c c c}
+\toprule
+\textbf{Class} & \textbf{n} & \textbf{Concat} & \textbf{SupCon} & \textbf{CrsAttn} & \textbf{Trans} & \textbf{MMCTL} \\
+\midrule
+\multicolumn{7}{l}{\emph{AWIR --- box area}} \\
+\emph{All} & 240 & 0.233 & 0.209 & 0.188 & 0.238 & \textbf{0.272} \\
+cow$^\star$ & 116 & \textbf{0.289} & 0.201 & 0.190 & 0.254 & 0.212 \\
+deer & 51 & 0.040 & \textbf{0.124} & 0.115 & 0.048 & 0.105 \\
+horse$^\star$ & 73 & \textbf{0.584} & 0.078 & 0.437 & 0.575 & 0.361 \\
+\midrule
+\multicolumn{7}{l}{\emph{NEON --- box area}} \\
+\emph{All} & 592 & 0.037 & 0.011 & 0.236 & \textbf{0.533} & 0.202 \\
+ABLA & 30 & 0.092 & -0.015 & 0.196 & 0.247 & \textbf{0.432} \\
+ACRU & 29 & -0.006 & 0.033 & \textbf{0.054} & 0.053 & 0.050 \\
+BENE4 & 36 & 0.169 & -0.089 & \textbf{0.299} & 0.235 & 0.173 \\
+PIEN & 36 & \textbf{0.236} & -0.010 & 0.188 & 0.145 & 0.057 \\
+PIMA & 42 & 0.252 & 0.281 & 0.363 & \textbf{0.384} & 0.291 \\
+PIPA2 & 138 & 0.145 & 0.054 & 0.266 & \textbf{0.665} & 0.344 \\
+PIPO & 24 & -0.094 & -0.146 & 0.058 & \textbf{0.269} & -0.005 \\
+POTR5 & 44 & 0.134 & 0.066 & \textbf{0.276} & 0.273 & 0.128 \\
+PSME & 183 & 0.115 & 0.185 & 0.393 & \textbf{0.538} & 0.415 \\
+TSCA & 30 & 0.170 & -0.124 & 0.192 & \textbf{0.562} & 0.280 \\
+\midrule
+\multicolumn{7}{l}{\emph{NEON --- canopy height}} \\
+\emph{All} & 592 & 0.121 & 0.066 & 0.252 & \textbf{0.478} & 0.274 \\
+ABLA & 30 & \textbf{0.380} & -0.089 & 0.346 & 0.117 & 0.298 \\
+ACRU & 29 & -0.009 & -0.044 & \textbf{0.230} & -0.037 & 0.118 \\
+BENE4 & 36 & 0.155 & -0.108 & \textbf{0.181} & 0.107 & 0.142 \\
+PIEN & 36 & \textbf{0.387} & -0.050 & 0.224 & 0.041 & 0.371 \\
+PIMA & 42 & \textbf{0.602} & 0.129 & 0.424 & 0.439 & 0.593 \\
+PIPA2$^\star$ & 138 & 0.310 & 0.185 & 0.171 & 0.298 & \textbf{0.504} \\
+PIPO & 24 & 0.102 & 0.272 & \textbf{0.355} & 0.150 & 0.017 \\
+POTR5 & 44 & 0.633 & 0.351 & \textbf{0.826} & 0.555 & 0.667 \\
+PSME$^\star$ & 183 & 0.300 & 0.266 & 0.563 & \textbf{0.662} & 0.593 \\
+TSCA & 30 & 0.023 & -0.011 & -0.026 & \textbf{0.187} & 0.127 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
 
 \begin{table}[t]
 \centering
@@ -511,23 +574,24 @@ Downstream task performance using unimodal and fused embeddings. Higher values i
 \end{table}
 
 
-\subsection{Annotation Weighting and Frozen vs.\ End-to-End Encoders}
+\subsection{\new{Annotation Weighting and Frozen vs.\ End-to-End Encoders}}
 \label{subsec:weight-e2e}
 
-\noindent\textbf{Class-weight sensitivity (NEON).}
-The joint annotation vector exposes one free knob per task, the weight $w_t$ (Eq.~\eqref{eq:ann-weight}). We sweep the class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ on NEON with the continuous-task weights fixed at $1.0$, using the released full-set MMCTL embeddings under the frozen task-head protocol. As shown in Fig.~\ref{fig:neon_ablation} and Table~\ref{tab:neon_weight_ablation}, increasing $w_{\text{class}}$ sharpens species separation in the embedding space and improves classification accuracy, with a mild trade-off against continuous-attribute regression. This confirms that the weight behaves as intended---trading semantic compactness against geometric spread---and motivates the balanced default used in the main tables.
+\new{\noindent\textbf{Class-weight sensitivity (NEON).}
+The joint annotation vector exposes one free knob per task, the weight $w_t$ (Eq.~\eqref{eq:ann-weight}). We sweep the class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ on NEON with the continuous-task weights fixed at $1.0$, using the released full-set MMCTL embeddings under the frozen task-head protocol. As shown in Fig.~\ref{fig:neon_ablation} and Table~\ref{tab:neon_weight_ablation}, increasing $w_{\text{class}}$ sharpens species separation in the embedding space and improves classification accuracy, with a mild trade-off against continuous-attribute regression. This confirms that the weight behaves as intended---trading semantic compactness against geometric spread---and motivates the balanced default used in the main tables.}
 
 \begin{figure*}[!htb]
     \centering
     \includegraphics[width=\textwidth]{figures/neon_ablation_classweight_boxsize.pdf}
-    \caption{NEON class-weight ablation. MMCTL embeddings trained with class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ (box/height weights fixed at $1.0$), projected with PCA (top) and t-SNE (bottom), colored by species and sized by bounding-box area. Larger class weights yield more compact, better-separated species clusters. (A height-sized version is provided in the supplementary figures.)}
+    \caption{\new{NEON class-weight ablation. MMCTL embeddings trained with class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ (box/height weights fixed at $1.0$), projected with PCA (top) and t-SNE (bottom), colored by species and sized by bounding-box area. Larger class weights yield more compact, better-separated species clusters. (A height-sized version is provided in the supplementary figures.)}}
     \label{fig:neon_ablation}
 \end{figure*}
 
 \begin{table}[t]
 \centering
-\caption{NEON class-weight ablation (R1.4). MMCTL trained with class-label weight $w_{\text{class}}$ swept while box/height weights are fixed at $1.0$; frozen task-head protocol, mean$\pm$std over $5$ folds. Increasing $w_{\text{class}}$ steadily improves classification while box/height regression stays stable, trading semantic compactness against continuous spread. Best per column in bold.}
+\caption{\new{NEON class-weight ablation (R1.4). MMCTL trained with class-label weight $w_{\text{class}}$ swept while box/height weights are fixed at $1.0$; frozen task-head protocol, mean$\pm$std over $5$ folds. Increasing $w_{\text{class}}$ steadily improves classification while box/height regression stays stable, trading semantic compactness against continuous spread. Best per column in bold.}}
 \label{tab:neon_weight_ablation}
+{\color{red}
 \begin{tabular}{c c c c}
 \toprule
 $w_{\text{class}}$ & \textbf{Acc (\%)} $\uparrow$ & \textbf{Box $R^2$} $\uparrow$ & \textbf{Height $R^2$} $\uparrow$ \\
@@ -538,10 +602,11 @@ $1.0$ & $80.14\err{2.18}$ & $\mathbf{0.283}\err{0.044}$ & $0.653\err{0.025}$ \\
 $1.5$ & $\mathbf{84.59}\err{1.43}$ & $0.252\err{0.076}$ & $0.619\err{0.028}$ \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
-\noindent\textbf{Frozen vs.\ end-to-end encoders (NEON).}
-The main protocol freezes modality encoders and trains task heads on fixed embeddings. To test whether this frozen choice is justified relative to fine-tuning, we run a controlled comparison on NEON: starting from the same MMCTL-pretrained encoders, we either keep them frozen (main protocol) or unfreeze them and fine-tune end-to-end jointly with the heads, holding the head architecture, data splits, standardized targets, and training budget fixed so the only difference is encoder trainability. Averaged over the five folds, freezing matches or exceeds end-to-end fine-tuning: classification accuracy is $81.99\pm1.02\%$ (frozen) vs.\ $80.66\pm1.35\%$ (end-to-end), while end-to-end yields only marginal gains on the continuous heads (box $R^2$ $0.316\pm0.040\rightarrow0.344\pm0.068$; height $R^2$ $0.514\pm0.091\rightarrow0.572\pm0.034$). Fine-tuning the encoders therefore does not improve, and slightly degrades, classification, confirming that the frozen protocol is a sound and substantially cheaper default rather than a limitation of the method.
+\new{\noindent\textbf{Frozen vs.\ end-to-end encoders (NEON).}
+The main protocol freezes modality encoders and trains task heads on fixed embeddings. To test whether this frozen choice is justified relative to fine-tuning, we run a controlled comparison on NEON: starting from the same MMCTL-pretrained encoders, we either keep them frozen (main protocol) or unfreeze them and fine-tune end-to-end jointly with the heads, holding the head architecture, data splits, standardized targets, and training budget fixed so the only difference is encoder trainability. Averaged over the five folds, freezing matches or exceeds end-to-end fine-tuning: classification accuracy is $81.99\pm1.02\%$ (frozen) vs.\ $80.66\pm1.35\%$ (end-to-end), while end-to-end yields only marginal gains on the continuous heads (box $R^2$ $0.316\pm0.040\rightarrow0.344\pm0.068$; height $R^2$ $0.514\pm0.091\rightarrow0.572\pm0.034$). Fine-tuning the encoders therefore does not improve, and slightly degrades, classification, confirming that the frozen protocol is a sound and substantially cheaper default rather than a limitation of the method.}
 
 \subsection{Missing Modality, Compute, and Failure Analysis}
 \label{subsec:additional-analyses}

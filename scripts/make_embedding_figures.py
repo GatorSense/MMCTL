@@ -219,6 +219,60 @@ def zoom_figure(projections, methods, y_cls, class_names, cont_values, cont_labe
     _save(fig, out_stem)
 
 
+def combined_zoom_figure(specs, out_stem, kind="pca", seed=SEED):
+    """One figure: rows = chosen (dataset, class, continuous-label), cols = fusion
+    methods. Each panel shows only that class's points colored by the continuous
+    label, with a per-row colorbar. specs: list of
+    (dataset, class_name, cont_key, cont_label)."""
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+
+    data_cache, proj_cache = {}, {}
+    def get(ds):
+        if ds not in data_cache:
+            d = load(ds)
+            data_cache[ds] = d
+            emb = {m: d[f"emb_{m}"] for m in FUSION_METHODS}
+            proj_cache[ds] = {m: {kind: project(emb[m], kind, seed=seed)} for m in FUSION_METHODS}
+        return data_cache[ds], proj_cache[ds]
+
+    nrows, ncols = len(specs), len(FUSION_METHODS)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(2.0 * ncols, 2.0 * nrows + 0.4),
+                             squeeze=False)
+    for r, (ds, cls, ckey, clabel) in enumerate(specs):
+        d, proj = get(ds)
+        names = list(d["class_names"])
+        focus = names.index(cls)
+        mask = d["class_label"] == focus
+        cvals = np.asarray(d[ckey], float)[mask]
+        lo, hi = np.percentile(cvals, 2), np.percentile(cvals, 98)
+        if hi - lo < 1e-9:
+            lo, hi = cvals.min(), cvals.max() + 1e-9
+        norm = Normalize(vmin=lo, vmax=hi)
+        for c, m in enumerate(FUSION_METHODS):
+            xy = proj[m][kind][mask]
+            ax = axes[r][c]
+            ax.scatter(xy[:, 0], xy[:, 1], c=cvals, cmap=CONT_CMAP, norm=norm,
+                       s=55, alpha=0.9, linewidths=0.3, edgecolors="white")
+            dx = xy[:, 0].ptp() * 0.08 + 1e-6
+            dy = xy[:, 1].ptp() * 0.08 + 1e-6
+            ax.set_xlim(xy[:, 0].min() - dx, xy[:, 0].max() + dx)
+            ax.set_ylim(xy[:, 1].min() - dy, xy[:, 1].max() + dy)
+            _bare(ax)
+            if r == 0:
+                ax.set_title(m, fontsize=11, pad=4)
+        axes[r][0].set_ylabel(f"{cls}\n({clabel})", fontsize=10)
+        sm = ScalarMappable(norm=norm, cmap=CONT_CMAP)
+        sm.set_array([])
+        cbar = fig.colorbar(sm, ax=list(axes[r]), location="right", fraction=0.015,
+                            pad=0.01)
+        cbar.ax.tick_params(labelsize=7)
+    fig.suptitle(f"Within-class continuous transition ({kind.upper()} projection)",
+                 fontsize=12, y=1.0)
+    print(f"    (combined zoom: {[s[1] for s in specs]}, proj={kind})")
+    _save(fig, out_stem)
+
+
 def zoom_all_classes(embeddings, methods, y_cls, class_names, cont_specs, out_prefix,
                      seed=SEED):
     """Generate a zoom figure for every class, for each continuous attribute.
@@ -276,11 +330,25 @@ def build_neon_ablation(seed=SEED):
                    "height", "neon_ablation_classweight_height", seed=seed)
 
 
+# The four classes featured in the paper's per-class zoom figure.
+PAPER_ZOOM_SPECS = [
+    ("awir", "horse", "box_area", "box area"),
+    ("awir", "cow", "box_area", "box area"),
+    ("neon", "PSME", "height", "canopy height"),
+    ("neon", "PIPA2", "height", "canopy height"),
+]
+
+
+def build_combined_zoom(seed=SEED):
+    print("[combined] per-class zoom (horse, cow, PSME, PIPA2)")
+    combined_zoom_figure(PAPER_ZOOM_SPECS, "embedding_zoom_perclass", kind="pca", seed=seed)
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--which", nargs="+",
-                   default=["awir", "neon", "neon_ablation"],
-                   choices=["awir", "neon", "neon_ablation"])
+                   default=["awir", "neon", "neon_ablation", "combined"],
+                   choices=["awir", "neon", "neon_ablation", "combined"])
     p.add_argument("--seed", type=int, default=SEED)
     args = p.parse_args()
 
@@ -290,6 +358,8 @@ def main():
         build_neon(args.seed)
     if "neon_ablation" in args.which:
         build_neon_ablation(args.seed)
+    if "combined" in args.which:
+        build_combined_zoom(args.seed)
 
 
 if __name__ == "__main__":
