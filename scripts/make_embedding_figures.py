@@ -65,7 +65,7 @@ def project(z: np.ndarray, kind: str, seed: int = SEED) -> np.ndarray:
     return ts.fit_transform(zp)
 
 
-def size_from(values: np.ndarray, smin: float = 8.0, smax: float = 160.0) -> np.ndarray:
+def size_from(values: np.ndarray, smin: float = 25.0, smax: float = 320.0) -> np.ndarray:
     """Map a continuous target to marker areas via robust 5-95 pct scaling."""
     v = np.asarray(values, dtype=np.float64)
     lo, hi = np.percentile(v, 5), np.percentile(v, 95)
@@ -73,59 +73,140 @@ def size_from(values: np.ndarray, smin: float = 8.0, smax: float = 160.0) -> np.
     return smin + (smax - smin) * scaled
 
 
-def _scatter_panel(ax, xy, y_cls, sizes, cmap, n_classes, title=None):
-    for c in range(n_classes):
-        m = y_cls == c
-        if not np.any(m):
-            continue
-        ax.scatter(xy[m, 0], xy[m, 1], s=sizes[m], c=[cmap(c)],
-                   alpha=0.7, linewidths=0.3, edgecolors="white")
+def subsample_per_class(y_cls: np.ndarray, n_max: int = 20, seed: int = SEED):
+    """Balanced subsample: min(n_max, smallest class) points from each class.
+
+    Projections are still fit on the full set; only the plotted points are
+    subsampled, so the scatter declutters without distorting the geometry.
+    """
+    rng = np.random.default_rng(seed)
+    classes = np.unique(y_cls)
+    n = int(min(n_max, min((y_cls == c).sum() for c in classes)))
+    idx = []
+    for c in classes:
+        ci = np.where(y_cls == c)[0]
+        idx.extend(rng.choice(ci, size=n, replace=False))
+    return np.sort(np.array(idx)), n
+
+
+# Modality layout of the stored embeddings (start:end columns), and per-modality
+# marker shapes. Concat / MMCTL / weighted-MMCTL are concatenations in this order.
+MOD_LAYOUT = {
+    "awir": [("RGB", 0, 1024), ("Thermal", 1024, 2048)],
+    "neon": [("RGB", 0, 1024), ("HSI", 1024, 2048), ("LiDAR", 2048, 3072)],
+}
+MARKERS = {"RGB": "o", "Thermal": "X", "HSI": "^", "LiDAR": "s", "Fused": "D"}
+UNIMODAL = {"RGB", "Thermal", "HSI", "LiDAR"}
+CONCAT_LIKE = {"Concat", "MMCTL"}
+
+
+def method_blocks(dataset, name, emb):
+    """Return [(modality_label, sub_embedding), ...] for a method panel.
+
+    Unimodal methods -> single block with that modality's marker.
+    Concatenation fusions (Concat, MMCTL, weighted MMCTL "w=...") -> split back
+    into their per-modality sub-embeddings so cross-modal alignment is visible.
+    Learned fusions (SupCon, CrossAttn, Transformer) collapse the modalities
+    into one vector and are shown as a single "Fused" block.
+    """
+    if name in UNIMODAL:
+        return [(name, emb)]
+    if name in CONCAT_LIKE or name.startswith("w="):
+        return [(lab, emb[:, a:b]) for lab, a, b in MOD_LAYOUT[dataset]]
+    return [("Fused", emb)]
+
+
+def project_blocks(blocks, kind, seed):
+    """Co-project several equal-dim blocks in one shared 2-D space."""
+    Z = np.concatenate([b for _, b in blocks], axis=0)
+    xy = project(Z, kind, seed=seed)
+    out, s = [], 0
+    for lab, b in blocks:
+        out.append((lab, xy[s:s + len(b)]))
+        s += len(b)
+    return out
+
+
+def _scatter_panel(ax, dataset, name, emb, sub, y_cls, sizes, cmap, kind, seed,
+                   title=None):
+    blocks = method_blocks(dataset, name, emb)
+    for lab, xy in project_blocks(blocks, kind, seed):
+        marker = MARKERS.get(lab, "o")
+        for c in np.unique(y_cls):
+            m = y_cls[sub] == c
+            if not np.any(m):
+                continue
+            ax.scatter(xy[sub][m, 0], xy[sub][m, 1], s=sizes[sub][m],
+                       c=[cmap(c)], marker=marker, alpha=0.7, linewidths=0.4,
+                       edgecolors="white")
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
         spine.set_edgecolor("#bbbbbb")
     if title:
         ax.set_title(title, fontsize=11, pad=4)
+    return [lab for lab, _ in blocks]
 
 
-def _class_legend(fig, class_names, cmap, size_label):
-    handles = [Line2D([0], [0], marker="o", color="w", markerfacecolor=cmap(i),
-                      markersize=8, label=str(n))
-               for i, n in enumerate(class_names)]
-    # add a size-encoding hint
-    handles.append(Line2D([0], [0], marker="o", color="w",
-                          markerfacecolor="#888888", markersize=5,
-                          label=f"small {size_label}"))
-    handles.append(Line2D([0], [0], marker="o", color="w",
-                          markerfacecolor="#888888", markersize=12,
-                          label=f"large {size_label}"))
-    fig.legend(handles=handles, loc="lower center", ncol=min(len(handles), 8),
-               frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
+def _legends(fig, class_names, cmap, size_label, used_modalities):
+    """Class legend (color) bottom-left; modality (marker) bottom-center;
+    point-size legend bottom-right."""
+    class_handles = [Line2D([0], [0], marker="o", color="w", markerfacecolor=cmap(i),
+                            markersize=8, label=str(n))
+                     for i, n in enumerate(class_names)]
+    ncol = 5 if len(class_handles) > 5 else len(class_handles)
+    leg1 = fig.legend(handles=class_handles, loc="lower left", ncol=ncol,
+                      frameon=False, fontsize=9, bbox_to_anchor=(0.01, -0.04),
+                      title="Class", title_fontsize=9)
+    leg1._legend_box.align = "left"
+    fig.add_artist(leg1)
+
+    mod_order = [m for m in ("RGB", "Thermal", "HSI", "LiDAR", "Fused")
+                 if m in used_modalities]
+    mod_handles = [Line2D([0], [0], marker=MARKERS[m], color="w",
+                          markerfacecolor="#555555", markeredgecolor="#555555",
+                          markersize=8, label=m) for m in mod_order]
+    leg2 = fig.legend(handles=mod_handles, loc="lower center", ncol=len(mod_handles),
+                      frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.04),
+                      title="Modality", title_fontsize=9)
+    fig.add_artist(leg2)
+
+    size_handles = [
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#888888",
+               markersize=5, label=f"small {size_label}"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#888888",
+               markersize=13, label=f"large {size_label}"),
+    ]
+    fig.legend(handles=size_handles, loc="lower right", ncol=1, frameon=False,
+               fontsize=9, bbox_to_anchor=(0.99, -0.04), title="Point size",
+               title_fontsize=9)
 
 
-def grid_figure(embeddings: dict, methods, y_cls, class_names, size_values,
+def grid_figure(dataset, embeddings: dict, methods, y_cls, class_names, size_values,
                 size_label, out_stem, seed=SEED):
     """Rows = {PCA, t-SNE}, cols = methods. Saves PDF (paper) + PNG (results)."""
-    n_classes = len(class_names)
     cmap = plt.get_cmap("tab10")
     sizes = size_from(size_values)
+    sub, n_per = subsample_per_class(y_cls, n_max=20, seed=seed)
 
     ncols = len(methods)
     fig, axes = plt.subplots(2, ncols, figsize=(1.9 * ncols, 4.4), squeeze=False)
 
+    used = set()
     for j, name in enumerate(methods):
         z = embeddings[name]
         for i, kind in enumerate(("pca", "tsne")):
-            xy = project(z, kind, seed=seed)
             title = name if i == 0 else None
-            _scatter_panel(axes[i][j], xy, y_cls, sizes, cmap, n_classes, title=title)
-        axes[0][j].set_ylabel("")
+            labs = _scatter_panel(axes[i][j], dataset, name, z, sub, y_cls, sizes,
+                                  cmap, kind, seed, title=title)
+            used.update(labs)
 
     axes[0][0].set_ylabel("PCA", fontsize=12)
     axes[1][0].set_ylabel("t-SNE", fontsize=12)
 
-    _class_legend(fig, class_names, cmap, size_label)
-    fig.tight_layout(rect=[0, 0.06, 1, 1])
+    _legends(fig, class_names, cmap, size_label, used)
+    fig.tight_layout(rect=[0, 0.09, 1, 1])
+    print(f"    (plotting {n_per} samples/class; modalities: {sorted(used)})")
 
     os.makedirs(PAPER_FIG_DIR, exist_ok=True)
     os.makedirs(RESULT_FIG_DIR, exist_ok=True)
@@ -146,7 +227,7 @@ def build_awir(seed=SEED):
     methods = [m for m in d["method_order"]]
     emb = {m: d[f"emb_{m}"] for m in methods}
     print("[AWIR] embedding-space figure (sized by box area)")
-    grid_figure(emb, methods, d["class_label"], d["class_names"], d["box_area"],
+    grid_figure("awir", emb, methods, d["class_label"], d["class_names"], d["box_area"],
                 "box area", "awir_embedding_space", seed=seed)
 
 
@@ -155,10 +236,10 @@ def build_neon(seed=SEED):
     methods = [m for m in d["method_order"]]
     emb = {m: d[f"emb_{m}"] for m in methods}
     print("[NEON] embedding-space figure (sized by box area)")
-    grid_figure(emb, methods, d["class_label"], d["class_names"], d["box_area"],
+    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["box_area"],
                 "box area", "neon_embedding_space_boxsize", seed=seed)
     print("[NEON] embedding-space figure (sized by canopy height)")
-    grid_figure(emb, methods, d["class_label"], d["class_names"], d["height"],
+    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["height"],
                 "height", "neon_embedding_space_height", seed=seed)
 
 
@@ -168,10 +249,10 @@ def build_neon_ablation(seed=SEED):
     emb = {f"w={w}": d[f"emb_MMCTL_w{w}"] for w in weights}
     methods = list(emb.keys())
     print("[NEON] class-weight ablation figure (sized by box area)")
-    grid_figure(emb, methods, d["class_label"], d["class_names"], d["box_area"],
+    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["box_area"],
                 "box area", "neon_ablation_classweight_boxsize", seed=seed)
     print("[NEON] class-weight ablation figure (sized by canopy height)")
-    grid_figure(emb, methods, d["class_label"], d["class_names"], d["height"],
+    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["height"],
                 "height", "neon_ablation_classweight_height", seed=seed)
 
 
