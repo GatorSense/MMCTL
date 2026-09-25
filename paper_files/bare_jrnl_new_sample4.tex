@@ -73,7 +73,7 @@ This work introduces Multi-Modal Continuous Triplet Loss (MMCTL), which treats m
 \begin{figure*}[!htb]
     \centering
     \includegraphics[width=\textwidth]{figures/awir_embedding_space.pdf}
-    \caption{AWIR embedding space across fusion methods, projected with PCA (top) and t-SNE (bottom). Points are colored by class label (cow, deer, horse) and sized by bounding-box area. Unimodal (RGB, Thermal) and task-driven fusion (Concat, SupCon, cross-attention, Transformer) embeddings mix classes or show no ordered size gradient, whereas MMCTL yields class-separated clusters in which point size varies smoothly within and across clusters, reflecting the annotation-aligned continuous geometry.}
+    \caption{AWIR embedding space across fusion methods (Concat, SupCon, cross-attention, Transformer, MMCTL), projected with PCA (top) and t-SNE (bottom). Points are colored by class label (cow, deer, horse) and sized by bounding-box area. Task-driven fusion baselines mix classes or show no ordered size gradient, whereas MMCTL yields class-separated clusters in which point size varies smoothly within and across clusters, reflecting the annotation-aligned continuous geometry.}
     \label{fig:emb_awir}
 \end{figure*}
 
@@ -411,13 +411,13 @@ Across both datasets, the comparison demonstrates that stronger fusion (SupCon, 
 
 Paired one-sided Wilcoxon tests across the $8$ AWIR folds quantify the continuous-geometry advantage: MMCTL significantly exceeds the best competing method on position correlation (vs.\ RGB, $p{=}0.0078$) and shows the highest box correlation (vs.\ Concat., $p{=}0.098$, a positive trend). As expected from Table~\ref{tab:latent_alignment}, MMCTL does not win class silhouette, where the class-supervised SupCon leads; the value of MMCTL is that no other method is competitive on the continuous axes without sacrificing class structure. Supporting linear probes on released test embeddings rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.
 
-The NEON embedding spaces in Fig.~\ref{fig:emb_neon} extend this comparison to a ten-species, three-modality setting. Sizing the same projections by bounding-box area and by canopy height shows that MMCTL organizes the shared space so that both geometric attributes vary coherently across the embedding, whereas unimodal and task-driven fusion embeddings expose class structure only weakly and show no consistent size or height gradient.
+The NEON embedding spaces in Fig.~\ref{fig:emb_neon} extend this comparison to a ten-species, three-modality setting. Sizing the same fusion-method projections by bounding-box area and by canopy height shows that MMCTL organizes the shared space so that both geometric attributes vary coherently across the embedding, whereas task-driven fusion embeddings expose class structure only weakly and show no consistent size or height gradient.
 
 \begin{figure*}[!htb]
     \centering
     \includegraphics[width=\textwidth]{figures/neon_embedding_space_boxsize.pdf}\\[2pt]
     \includegraphics[width=\textwidth]{figures/neon_embedding_space_height.pdf}
-    \caption{NEON embedding space across fusion methods (PCA top, t-SNE bottom within each panel row), colored by species. Points are sized by bounding-box area (top block) and by canopy height (bottom block). MMCTL produces species-separated clusters whose point sizes vary smoothly, reflecting continuous box and height geometry, while baselines mix species and lack an ordered geometric gradient.}
+    \caption{NEON embedding space across fusion methods (Concat, SupCon, cross-attention, Transformer, MMCTL; PCA top, t-SNE bottom within each block), colored by species. Points are sized by bounding-box area (top block) and by canopy height (bottom block). MMCTL produces species-separated clusters whose point sizes vary smoothly, reflecting continuous box and height geometry, while task-driven baselines mix species and lack an ordered geometric gradient.}
     \label{fig:emb_neon}
 \end{figure*}
 

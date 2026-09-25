@@ -89,125 +89,12 @@ def subsample_per_class(y_cls: np.ndarray, n_max: int = 20, seed: int = SEED):
     return np.sort(np.array(idx)), n
 
 
-# Modality layout of the stored embeddings (start:end columns), and per-modality
-# marker shapes. Concat / MMCTL / weighted-MMCTL are concatenations in this order.
-MOD_LAYOUT = {
-    "awir": [("RGB", 0, 1024), ("Thermal", 1024, 2048)],
-    "neon": [("RGB", 0, 1024), ("HSI", 1024, 2048), ("LiDAR", 2048, 3072)],
-}
-MARKERS = {"RGB": "o", "Thermal": "X", "HSI": "^", "LiDAR": "s", "Fused": "D"}
-UNIMODAL = {"RGB", "Thermal", "HSI", "LiDAR"}
-CONCAT_LIKE = {"Concat", "MMCTL"}
+# Only embedding-level fusion methods are shown (unimodal panels removed).
+FUSION_METHODS = ["Concat", "SupCon", "CrossAttn", "Transformer", "MMCTL"]
+CONT_CMAP = "viridis"
 
 
-def method_blocks(dataset, name, emb):
-    """Return [(modality_label, sub_embedding), ...] for a method panel.
-
-    Unimodal methods -> single block with that modality's marker.
-    Concatenation fusions (Concat, MMCTL, weighted MMCTL "w=...") -> split back
-    into their per-modality sub-embeddings so cross-modal alignment is visible.
-    Learned fusions (SupCon, CrossAttn, Transformer) collapse the modalities
-    into one vector and are shown as a single "Fused" block.
-    """
-    if name in UNIMODAL:
-        return [(name, emb)]
-    if name in CONCAT_LIKE or name.startswith("w="):
-        return [(lab, emb[:, a:b]) for lab, a, b in MOD_LAYOUT[dataset]]
-    return [("Fused", emb)]
-
-
-def project_blocks(blocks, kind, seed):
-    """Co-project several equal-dim blocks in one shared 2-D space."""
-    Z = np.concatenate([b for _, b in blocks], axis=0)
-    xy = project(Z, kind, seed=seed)
-    out, s = [], 0
-    for lab, b in blocks:
-        out.append((lab, xy[s:s + len(b)]))
-        s += len(b)
-    return out
-
-
-def _scatter_panel(ax, dataset, name, emb, sub, y_cls, sizes, cmap, kind, seed,
-                   title=None):
-    blocks = method_blocks(dataset, name, emb)
-    for lab, xy in project_blocks(blocks, kind, seed):
-        marker = MARKERS.get(lab, "o")
-        for c in np.unique(y_cls):
-            m = y_cls[sub] == c
-            if not np.any(m):
-                continue
-            ax.scatter(xy[sub][m, 0], xy[sub][m, 1], s=sizes[sub][m],
-                       c=[cmap(c)], marker=marker, alpha=0.7, linewidths=0.4,
-                       edgecolors="white")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    for spine in ax.spines.values():
-        spine.set_edgecolor("#bbbbbb")
-    if title:
-        ax.set_title(title, fontsize=11, pad=4)
-    return [lab for lab, _ in blocks]
-
-
-def _legends(fig, class_names, cmap, size_label, used_modalities):
-    """Class legend (color) bottom-left; modality (marker) bottom-center;
-    point-size legend bottom-right."""
-    class_handles = [Line2D([0], [0], marker="o", color="w", markerfacecolor=cmap(i),
-                            markersize=8, label=str(n))
-                     for i, n in enumerate(class_names)]
-    ncol = 5 if len(class_handles) > 5 else len(class_handles)
-    leg1 = fig.legend(handles=class_handles, loc="lower left", ncol=ncol,
-                      frameon=False, fontsize=9, bbox_to_anchor=(0.01, -0.04),
-                      title="Class", title_fontsize=9)
-    leg1._legend_box.align = "left"
-    fig.add_artist(leg1)
-
-    mod_order = [m for m in ("RGB", "Thermal", "HSI", "LiDAR", "Fused")
-                 if m in used_modalities]
-    mod_handles = [Line2D([0], [0], marker=MARKERS[m], color="w",
-                          markerfacecolor="#555555", markeredgecolor="#555555",
-                          markersize=8, label=m) for m in mod_order]
-    leg2 = fig.legend(handles=mod_handles, loc="lower center", ncol=len(mod_handles),
-                      frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.04),
-                      title="Modality", title_fontsize=9)
-    fig.add_artist(leg2)
-
-    size_handles = [
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#888888",
-               markersize=5, label=f"small {size_label}"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#888888",
-               markersize=13, label=f"large {size_label}"),
-    ]
-    fig.legend(handles=size_handles, loc="lower right", ncol=1, frameon=False,
-               fontsize=9, bbox_to_anchor=(0.99, -0.04), title="Point size",
-               title_fontsize=9)
-
-
-def grid_figure(dataset, embeddings: dict, methods, y_cls, class_names, size_values,
-                size_label, out_stem, seed=SEED):
-    """Rows = {PCA, t-SNE}, cols = methods. Saves PDF (paper) + PNG (results)."""
-    cmap = plt.get_cmap("tab10")
-    sizes = size_from(size_values)
-    sub, n_per = subsample_per_class(y_cls, n_max=20, seed=seed)
-
-    ncols = len(methods)
-    fig, axes = plt.subplots(2, ncols, figsize=(1.9 * ncols, 4.4), squeeze=False)
-
-    used = set()
-    for j, name in enumerate(methods):
-        z = embeddings[name]
-        for i, kind in enumerate(("pca", "tsne")):
-            title = name if i == 0 else None
-            labs = _scatter_panel(axes[i][j], dataset, name, z, sub, y_cls, sizes,
-                                  cmap, kind, seed, title=title)
-            used.update(labs)
-
-    axes[0][0].set_ylabel("PCA", fontsize=12)
-    axes[1][0].set_ylabel("t-SNE", fontsize=12)
-
-    _legends(fig, class_names, cmap, size_label, used)
-    fig.tight_layout(rect=[0, 0.09, 1, 1])
-    print(f"    (plotting {n_per} samples/class; modalities: {sorted(used)})")
-
+def _save(fig, out_stem):
     os.makedirs(PAPER_FIG_DIR, exist_ok=True)
     os.makedirs(RESULT_FIG_DIR, exist_ok=True)
     pdf = os.path.join(PAPER_FIG_DIR, out_stem + ".pdf")
@@ -218,29 +105,162 @@ def grid_figure(dataset, embeddings: dict, methods, y_cls, class_names, size_val
     print(f"  wrote {pdf}\n        {png}")
 
 
+def _bare(ax):
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_edgecolor("#bbbbbb")
+
+
+def overall_figure(embeddings, methods, y_cls, class_names, size_values,
+                   size_label, out_stem, seed=SEED):
+    """Fusion methods only. Rows = {PCA, t-SNE}; color = class; size = continuous
+    attribute. One point per sample (no modality splitting)."""
+    cmap = plt.get_cmap("tab10")
+    sizes = size_from(size_values)
+    sub, n_per = subsample_per_class(y_cls, n_max=20, seed=seed)
+
+    ncols = len(methods)
+    fig, axes = plt.subplots(2, ncols, figsize=(2.0 * ncols, 4.6), squeeze=False)
+    for j, name in enumerate(methods):
+        z = embeddings[name]
+        for i, kind in enumerate(("pca", "tsne")):
+            xy = project(z, kind, seed=seed)
+            ax = axes[i][j]
+            for c in np.unique(y_cls):
+                m = y_cls[sub] == c
+                ax.scatter(xy[sub][m, 0], xy[sub][m, 1], s=sizes[sub][m],
+                           c=[cmap(c)], alpha=0.75, linewidths=0.3,
+                           edgecolors="white")
+            _bare(ax)
+            if i == 0:
+                ax.set_title(name, fontsize=11, pad=4)
+    axes[0][0].set_ylabel("PCA", fontsize=12)
+    axes[1][0].set_ylabel("t-SNE", fontsize=12)
+
+    class_handles = [Line2D([0], [0], marker="o", color="w", markerfacecolor=cmap(i),
+                            markersize=8, label=str(n)) for i, n in enumerate(class_names)]
+    ncol = 5 if len(class_handles) > 5 else len(class_handles)
+    leg1 = fig.legend(handles=class_handles, loc="lower left", ncol=ncol, frameon=False,
+                      fontsize=9, bbox_to_anchor=(0.01, -0.03), title="Class", title_fontsize=9)
+    leg1._legend_box.align = "left"
+    fig.add_artist(leg1)
+    size_handles = [
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#888888",
+               markersize=5, label=f"small {size_label}"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#888888",
+               markersize=13, label=f"large {size_label}"),
+    ]
+    fig.legend(handles=size_handles, loc="lower right", ncol=1, frameon=False,
+               fontsize=9, bbox_to_anchor=(0.99, -0.03), title="Point size", title_fontsize=9)
+    fig.tight_layout(rect=[0, 0.07, 1, 1])
+    print(f"    (overall: {n_per} samples/class, fusion methods only)")
+    _save(fig, out_stem)
+
+
+def compute_projections(embeddings, methods, seed=SEED):
+    """Project each method's full embedding once; reused across all class zooms."""
+    proj = {}
+    for name in methods:
+        z = embeddings[name]
+        proj[name] = {kind: project(z, kind, seed=seed) for kind in ("pca", "tsne")}
+    return proj
+
+
+def _safe(name):
+    return "".join(c if c.isalnum() else "_" for c in str(name))
+
+
+def zoom_figure(projections, methods, y_cls, class_names, cont_values, cont_label,
+                focus_class, out_stem):
+    """Zoom into one class cluster. For each fusion method, show only the focus
+    class colored by the continuous attribute so a smooth spatial color gradient
+    indicates a smooth continuous transition. Projections are precomputed."""
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+
+    focus = list(class_names).index(focus_class)
+    mask = y_cls == focus
+    n = int(mask.sum())
+    if n < 5:
+        print(f"    (skip zoom class={focus_class}: only {n} samples)")
+        return
+    cvals = np.asarray(cont_values, float)[mask]
+    lo, hi = np.percentile(cvals, 2), np.percentile(cvals, 98)
+    if hi - lo < 1e-9:
+        lo, hi = cvals.min(), cvals.max() + 1e-9
+    norm = Normalize(vmin=lo, vmax=hi)
+
+    ncols = len(methods)
+    fig, axes = plt.subplots(2, ncols, figsize=(2.0 * ncols, 4.6), squeeze=False)
+    for j, name in enumerate(methods):
+        for i, kind in enumerate(("pca", "tsne")):
+            xy_f = projections[name][kind][mask]
+            ax = axes[i][j]
+            ax.scatter(xy_f[:, 0], xy_f[:, 1], c=cvals, cmap=CONT_CMAP, norm=norm,
+                       s=70, alpha=0.9, linewidths=0.3, edgecolors="white")
+            dx = xy_f[:, 0].ptp() * 0.08 + 1e-6
+            dy = xy_f[:, 1].ptp() * 0.08 + 1e-6
+            ax.set_xlim(xy_f[:, 0].min() - dx, xy_f[:, 0].max() + dx)
+            ax.set_ylim(xy_f[:, 1].min() - dy, xy_f[:, 1].max() + dy)
+            _bare(ax)
+            if i == 0:
+                ax.set_title(name, fontsize=11, pad=4)
+    axes[0][0].set_ylabel("PCA", fontsize=12)
+    axes[1][0].set_ylabel("t-SNE", fontsize=12)
+
+    sm = ScalarMappable(norm=norm, cmap=CONT_CMAP)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=axes, orientation="horizontal", fraction=0.05,
+                        pad=0.08, aspect=40)
+    cbar.set_label(f"{cont_label}  (class: {focus_class})", fontsize=10)
+    fig.suptitle(f"Within-class continuous transition — {focus_class}", fontsize=12, y=1.02)
+    print(f"    (zoom: class={focus_class}, n={n}, color={cont_label})")
+    _save(fig, out_stem)
+
+
+def zoom_all_classes(embeddings, methods, y_cls, class_names, cont_specs, out_prefix,
+                     seed=SEED):
+    """Generate a zoom figure for every class, for each continuous attribute.
+
+    cont_specs: list of (values, label, filename_tag).
+    """
+    proj = compute_projections(embeddings, methods, seed=seed)
+    for cls in class_names:
+        for values, label, tag in cont_specs:
+            zoom_figure(proj, methods, y_cls, class_names, values, label, cls,
+                        f"{out_prefix}_zoom_{tag}_{_safe(cls)}")
+
+
 def load(dataset):
     return np.load(os.path.join(EMB_DIR, f"{dataset}_fig_embeddings.npz"), allow_pickle=True)
 
 
 def build_awir(seed=SEED):
     d = load("awir")
-    methods = [m for m in d["method_order"]]
-    emb = {m: d[f"emb_{m}"] for m in methods}
-    print("[AWIR] embedding-space figure (sized by box area)")
-    grid_figure("awir", emb, methods, d["class_label"], d["class_names"], d["box_area"],
-                "box area", "awir_embedding_space", seed=seed)
+    emb = {m: d[f"emb_{m}"] for m in FUSION_METHODS}
+    print("[AWIR] overall fusion figure (color=class, size=box area)")
+    overall_figure(emb, FUSION_METHODS, d["class_label"], d["class_names"],
+                   d["box_area"], "box area", "awir_embedding_space", seed=seed)
+    print("[AWIR] per-class zooms (color=box area)")
+    zoom_all_classes(emb, FUSION_METHODS, d["class_label"], d["class_names"],
+                     [(d["box_area"], "box area", "box")], "awir_embedding", seed=seed)
 
 
 def build_neon(seed=SEED):
     d = load("neon")
-    methods = [m for m in d["method_order"]]
-    emb = {m: d[f"emb_{m}"] for m in methods}
-    print("[NEON] embedding-space figure (sized by box area)")
-    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["box_area"],
-                "box area", "neon_embedding_space_boxsize", seed=seed)
-    print("[NEON] embedding-space figure (sized by canopy height)")
-    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["height"],
-                "height", "neon_embedding_space_height", seed=seed)
+    emb = {m: d[f"emb_{m}"] for m in FUSION_METHODS}
+    print("[NEON] overall fusion figure (color=class, size=box area)")
+    overall_figure(emb, FUSION_METHODS, d["class_label"], d["class_names"],
+                   d["box_area"], "box area", "neon_embedding_space_boxsize", seed=seed)
+    print("[NEON] overall fusion figure (color=class, size=canopy height)")
+    overall_figure(emb, FUSION_METHODS, d["class_label"], d["class_names"],
+                   d["height"], "height", "neon_embedding_space_height", seed=seed)
+    print("[NEON] per-species zooms (color=box area and canopy height)")
+    zoom_all_classes(emb, FUSION_METHODS, d["class_label"], d["class_names"],
+                     [(d["box_area"], "box area", "box"),
+                      (d["height"], "canopy height", "height")],
+                     "neon_embedding", seed=seed)
 
 
 def build_neon_ablation(seed=SEED):
@@ -249,11 +269,11 @@ def build_neon_ablation(seed=SEED):
     emb = {f"w={w}": d[f"emb_MMCTL_w{w}"] for w in weights}
     methods = list(emb.keys())
     print("[NEON] class-weight ablation figure (sized by box area)")
-    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["box_area"],
-                "box area", "neon_ablation_classweight_boxsize", seed=seed)
+    overall_figure(emb, methods, d["class_label"], d["class_names"], d["box_area"],
+                   "box area", "neon_ablation_classweight_boxsize", seed=seed)
     print("[NEON] class-weight ablation figure (sized by canopy height)")
-    grid_figure("neon", emb, methods, d["class_label"], d["class_names"], d["height"],
-                "height", "neon_ablation_classweight_height", seed=seed)
+    overall_figure(emb, methods, d["class_label"], d["class_names"], d["height"],
+                   "height", "neon_ablation_classweight_height", seed=seed)
 
 
 def main():
