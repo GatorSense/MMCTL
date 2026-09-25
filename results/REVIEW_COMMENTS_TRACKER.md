@@ -1,6 +1,6 @@
 # MMCTL Resubmission — Reviewer Comments Tracker
 
-**Last updated:** 2026-09-20  
+**Last updated:** 2026-09-24  
 **Manuscript:** `paper_files/bare_jrnl_new_sample4.tex`  
 **Results summary:** `results/RESULTS_TRACKER.md`
 
@@ -8,99 +8,57 @@ Status key: **DONE** | **PARTIAL** | **OPEN** | **DEFERRED** | **N/A**
 
 ---
 
-## Reviewer 1 (Attached standard file — reviewer.pdf)
+## Reviewer 1
 
-| # | Request | Status | Where addressed / what’s left |
+| # | Request | Status | Notes |
 |---|---|---|---|
-| R1.1 | Clarify essential difference vs supervised contrastive / cross-modal triplet; continuous similarity contribution | **DONE** | Related Work + contribution bullets (i)–(iv); intro inductive-bias framing |
-| R1.2 | Interpretable latent space: visualizations or cross-modal retrieval | **PARTIAL** | Existing PCA fig + new failure/retrieval fig + class R1 80.8% / identity 7.5%. Successes grid not placed in PDF (space). Optional: add successes fig if pages allow |
-| R1.3 | Specify pos/neg selection rules; similarity thresholds / margins | **DONE** | Method: batch-all; order-only criterion; no hard threshold; margin-free adaptive gap |
-| R1.4 | How annotations normalized/weighted; does weighting affect results? | **DONE** | Eqs. for norm/weight; class-weight ablation Fig. already in paper |
-| R1.5 | Rationale for freezing encoder; compare end-to-end fine-tuning | **PARTIAL** | Freeze framed as fair fusion protocol. **OPEN:** freeze vs E2E experiment (skipped; no checkpoints / optional) |
-| R1.6 | Stronger baselines: SupCon, cross-attention, Transformer fusion | **OPEN** | Not run. Need at least one stronger baseline for a complete response |
-| R1.7 | Report std + statistical significance | **DONE** (AWIR) | Wilcoxon n=8, structure p=0.0078; proxy downstream p≤0.016. **OPEN:** NEON significance once NEON replicated |
-| — | Overall “method too simple / limited contribution” | **PARTIAL** | Related Work + incremental bullets. Still need NEON repro + ideally R1.5/R1.6 for strength |
+| R1.1 | Difference vs SupCon / cross-modal triplet | **DONE** | Related Work + contribution bullets |
+| R1.2 | Interpretable latent space / retrieval | **PARTIAL** | PCA + retrieval failure fig; optional successes fig |
+| R1.3 | Pos/neg selection; margins | **DONE** | Batch-all; order-only; margin-free |
+| R1.4 | Annotation norm/weighting; does weight matter? | **PARTIAL** | Eqs + fixed weights stated; **class-weight ablation figure removed** (no sensitivity plot) |
+| R1.5 | Freeze rationale; freeze vs E2E | **PARTIAL** | Freeze justified as fair protocol; **no E2E experiment** |
+| R1.6 | Stronger baselines | **DONE** | SupCon / CrossAttn / Transformer on AWIR+NEON; DeepSet removed |
+| R1.7 | Std + significance | **PARTIAL** | AWIR Wilcoxon done; **NEON significance not reported** |
 
 ---
 
-## Reviewer 2 (Comments to the Author)
+## Reviewer 2
 
-| # | Request | Status | Where addressed / what’s left |
+| # | Request | Status | Notes |
 |---|---|---|---|
-| R2.1 | State substantive increment vs prior work (Eqs 1–3, continuous triplet, reg, multimodal extension) | **DONE** | Related Work + explicit contribution bullets tied to eqs |
-| R2.2 | Intro uses gradient conflict without experiments — revise motivation | **DONE** | Intro rewritten; gradient-conflict claim removed |
-| R2.3 | Discuss vs soft/continuous similarity ML and adaptive-margin triplets | **DONE** | Related Work (Kim 2019, Ha adaptive-margin, etc.) |
-| R2.4 | Add cross-dataset/cross-region transfer **or** missing-modality | **PARTIAL** | AWIR missing-modality probes done. **OPEN:** cross-region / NEON transfer; NEON missing-modality |
-| R2.5 | Report #triplets, time/epoch, GPU memory (batch-all) | **PARTIAL** | Upper-bound triplets + M4 microbench. **OPEN:** full schedule wall-clock / true peak GPU memory on training GPU |
-| R2.6 | Clarify k-fold vs “averaged over 5 runs” in Fig. 3 caption | **DONE** | Caption aligned with 5 NEON CV folds |
-| R2.7 | Error analysis: when method works / fails | **PARTIAL** | AWIR retrieval failure analysis. **OPEN:** richer NEON failure cases; more typical downstream failure discussion |
-| R2.8 | Update refs to formally published versions (e.g. [8]) | **PARTIAL** | `zhou2025multi` → IGARSS 2025; added Khosla/Ha. **OPEN:** audit remaining arXiv-only cites (`reiter2020deep` still arXiv) |
+| R2.1 | Substantive increment vs prior | **DONE** | Contribution bullets tied to eqs |
+| R2.2 | Gradient-conflict intro | **DONE** | Rewritten |
+| R2.3 | Soft/continuous / adaptive-margin | **DONE** | Related Work |
+| R2.4 | Cross-dataset/region **or** missing-modality | **DONE** (via missing-mod) | AWIR missing-modality in paper; cross-region optional |
+| R2.5 | Triplets / time / GPU memory | **PARTIAL** | Upper bound + M4 microbench; no training-GPU peak memory |
+| R2.6 | k-fold vs “runs” caption | **DONE** | |
+| R2.7 | Error analysis | **PARTIAL** | AWIR retrieval failures; NEON failure cases thin |
+| R2.8 | Published refs | **PARTIAL** | Some updates; finish arXiv→venue audit |
 
 ---
 
-## Replication / experimental gates
+## Still open (actionable)
 
-| Item | Status | Notes |
-|---|---|---|
-| AWIR structure table | **DONE — PASS** | Keep paper numbers; max drift 0.13 |
-| AWIR downstream table | **PARTIAL** | Keep paper absolutes; proxy cls OK; DeepSet proxy FAIL |
-| AWIR missing modality | **DONE** | In manuscript + `missing_modality.json` |
-| AWIR significance | **DONE** | In manuscript + `significance.json` |
-| AWIR compute cost | **PARTIAL** | Upper bound + microbench in manuscript |
-| AWIR failure/retrieval | **DONE** | In manuscript + figures |
-| **NEON structure table** | **PROXY — absolute FAIL** | Used CTL `neon_data.npz`. Keep paper numbers. See `replication_neon_delta.md`. Improved script: `reproduce_neon_ae_mmctl.py` |
-| **NEON downstream table** | **PROXY — absolute FAIL** | Same; keep paper numbers |
-| NEON significance | **OPEN** | Needs faithful repro first |
-| Stronger baseline (R1.6) | **DONE** | AWIR+NEON full-set emb: SupCon/CrossAttn/Transformer in tables (DeepSet removed) |
-| Freeze vs E2E (R1.5) | **OPEN** | Recommended if compute allows |
-| Cross-region transfer | **OPEN** | Alternative/addition to missing-mod for R2.4 |
-| PDF ≤8 pages verified | **OPEN** | Estimate ~7.5–8; need local `pdflatex` compile |
+### Must before resubmit
+1. **Compile PDF** and confirm ≤8 pages (ablation removal helps)
+2. **Response-to-reviewers letter** mapping each R1/R2 point → manuscript location
+3. **Ref audit** (published versions where available)
 
----
+### Should (reviewers may push)
+4. **R1.5** Freeze vs end-to-end (even one dataset / short run)
+5. **R1.4** If they want weight sensitivity without a full ablation fig: 1–2 sentences or a tiny table from existing `neon_mmctl_all_6_{0.5,0.8,1.0,1.5}.npy`
+6. **R1.7** NEON paired significance (structure/downstream across 5 folds)
+7. **R2.5** Real train time/peak memory if you have GPU logs
 
-## Manuscript text edits (writing)
-
-| Edit | Status |
-|---|---|
-| Intro rewrite | **DONE** |
-| Related Work + contributions | **DONE** |
-| Method clarifications (triplets/margin/weights/freeze) | **DONE** |
-| Same-labels / different-bias claim | **DONE** |
-| Reproducibility paragraph | **DONE** |
-| Significance paragraph | **DONE** |
-| Missing-modality paragraph | **DONE** |
-| Compute-cost paragraph | **DONE** |
-| Failure/retrieval subsection + fig | **DONE** |
-| Fig. ablation caption fix | **DONE** |
-| LaTeX `\err{0.88}` fix | **DONE** |
-| Bibliography updates | **PARTIAL** |
-| Response-to-reviewers letter | **OPEN** | Draft after remaining experiments |
-| Final page-budget trim | **OPEN** | After NEON + optional experiments |
+### Optional / nice
+8. Retrieval **successes** figure (R1.2)
+9. NEON missing-modality or cross-region (R2.4 already covered by AWIR missing-mod)
+10. Stronger NEON failure discussion (R2.7)
 
 ---
 
-## Priority checklist — what you still need to do
-
-### Must (before confident resubmit)
-1. **Reproduce / proxy-reproduce NEON** structure + downstream; document PASS/FAIL vs paper tables → update `RESULTS_TRACKER.md`
-2. **Compile PDF** and confirm ≤8 pages; trim if over
-3. **Write response-to-reviewers** mapping each R1/R2 point to manuscript locations
-4. Finish **ref audit** (published versions where available)
-
-### Should (strongly recommended for R1)
-5. Add **one stronger baseline** (SupCon *or* cross-attention) on AWIR at minimum
-6. Add **freeze vs end-to-end** ablation (even one dataset)
-7. Improve **compute reporting** if you have access to the original training GPU logs (time/epoch, peak memory)
-
-### Nice / optional
-8. Place retrieval **successes** figure if space
-9. Cross-site NEON transfer experiment
-10. Deeper downstream failure case study (confused species / small crowns)
-
----
-
-## Change log of this tracker
-
+## Change log
 | Date | Update |
 |---|---|
-| 2026-09-20 | Initial tracker from R1+R2 + Agent A/B outcomes; NEON marked open |
+| 2026-09-20 | Initial tracker |
+| 2026-09-24 | R1.6 done; NEON/AWIR full-set baselines; ablation study removed from manuscript |
