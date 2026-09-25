@@ -70,12 +70,12 @@ This work introduces Multi-Modal Continuous Triplet Loss (MMCTL), which treats m
 
 % We propose a Continuous Triplet Loss to preserve annotation-grounded geometry rather than enforcing binary similarity. By aligning relative distances in the embedding space with continuous similarity measured in annotation space, this formulation has been shown to learn effective representations under continuous supervision \cite{kim2019deep}. This work applies Continuous Triplet Loss in a multi-modal setting to jointly coordinate embeddings from multiple sensing modalities in a shared latent space using annotation-driven geometry rather than task objectives. As illustrated in Fig.~\ref{fig:emb_awir}, MMCTL coordinates RGB and thermal embeddings from the AWIR dataset so that samples corresponding to the same object are aligned across modalities while preserving semantic separation by class and smooth variation with box size. In contrast, simple concatenation produces disjoint modality clusters with limited cross-modal alignment, and DeepSet fusion \cite{reiter2020deep} fails to clearly separate classes or reflect geometric attributes such as box size. 
 
-\begin{figure}[!htb]
+\begin{figure*}[!htb]
     \centering
-    \includegraphics[width=\columnwidth]{figures/pca_highlight_mmctl_run01_double.pdf}
-    \caption{Visualization of AWIR fused embeddings projected using PCA. Points are colored by class label and sized by bounding box area. MMCTL aligns RGB and thermal embeddings corresponding to the same objects while preserving semantic separation and continuous geometric variation.}
+    \includegraphics[width=\textwidth]{figures/awir_embedding_space.pdf}
+    \caption{AWIR embedding space across fusion methods, projected with PCA (top) and t-SNE (bottom). Points are colored by class label (cow, deer, horse) and sized by bounding-box area. Unimodal (RGB, Thermal) and task-driven fusion (Concat, SupCon, cross-attention, Transformer) embeddings mix classes or show no ordered size gradient, whereas MMCTL yields class-separated clusters in which point size varies smoothly within and across clusters, reflecting the annotation-aligned continuous geometry.}
     \label{fig:emb_awir}
-\end{figure}
+\end{figure*}
 
 \section{Related Work}
 \label{sec:related}
@@ -469,6 +469,16 @@ Across both datasets, the comparison demonstrates that stronger fusion (SupCon, 
 
 Paired Wilcoxon tests across the $8$ AWIR runs confirm that MMCTL improves structure scores over the strongest competing method on each annotation source (class vs.\ Concat.; box and position vs.\ RGB; all $p{=}0.0078$). Supporting linear probes on released test embeddings similarly rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.
 
+The NEON embedding spaces in Fig.~\ref{fig:emb_neon} extend this comparison to a ten-species, three-modality setting. Sizing the same projections by bounding-box area and by canopy height shows that MMCTL organizes the shared space so that both geometric attributes vary coherently across the embedding, whereas unimodal and task-driven fusion embeddings expose class structure only weakly and show no consistent size or height gradient.
+
+\begin{figure*}[!htb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/neon_embedding_space_boxsize.pdf}\\[2pt]
+    \includegraphics[width=\textwidth]{figures/neon_embedding_space_height.pdf}
+    \caption{NEON embedding space across fusion methods (PCA top, t-SNE bottom within each panel row), colored by species. Points are sized by bounding-box area (top block) and by canopy height (bottom block). MMCTL produces species-separated clusters whose point sizes vary smoothly, reflecting continuous box and height geometry, while baselines mix species and lack an ordered geometric gradient.}
+    \label{fig:emb_neon}
+\end{figure*}
+
 \begin{table}[t]
 \centering
 \caption{
@@ -558,6 +568,25 @@ Downstream task performance using unimodal and fused embeddings. Higher values i
 \end{tabular}
 \end{table}
 
+
+\subsection{Annotation Weighting and Frozen vs.\ End-to-End Encoders}
+\label{subsec:weight-e2e}
+
+\noindent\textbf{Class-weight sensitivity (NEON).}
+The joint annotation vector exposes one free knob per task, the weight $w_t$ (Eq.~\eqref{eq:ann-weight}). We sweep the class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ on NEON with the continuous-task weights fixed at $1.0$, using the released full-set MMCTL embeddings under the frozen task-head protocol. As shown in Fig.~\ref{fig:neon_ablation} and Table~\ref{tab:neon_weight_ablation}, increasing $w_{\text{class}}$ sharpens species separation in the embedding space and improves classification accuracy, with a mild trade-off against continuous-attribute regression. This confirms that the weight behaves as intended---trading semantic compactness against geometric spread---and motivates the balanced default used in the main tables.
+
+\begin{figure*}[!htb]
+    \centering
+    \includegraphics[width=\textwidth]{figures/neon_ablation_classweight_boxsize.pdf}
+    \caption{NEON class-weight ablation. MMCTL embeddings trained with class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ (box/height weights fixed at $1.0$), projected with PCA (top) and t-SNE (bottom), colored by species and sized by bounding-box area. Larger class weights yield more compact, better-separated species clusters. (A height-sized version is provided in the supplementary figures.)}
+    \label{fig:neon_ablation}
+\end{figure*}
+
+%%FILL:neon_weight_ablation_table
+
+\noindent\textbf{Frozen vs.\ end-to-end encoders (NEON).}
+The main protocol freezes modality encoders and trains task heads on fixed embeddings. To test whether this frozen choice is justified relative to fine-tuning, we run a controlled comparison on NEON: starting from the same MMCTL-pretrained encoders, we either keep them frozen (main protocol) or unfreeze them and fine-tune end-to-end jointly with the heads, holding the head architecture, data splits, standardized targets, and training budget fixed so the only difference is encoder trainability.
+%%FILL:freeze_vs_e2e_result
 
 \subsection{Missing Modality, Compute, and Failure Analysis}
 \label{subsec:additional-analyses}
