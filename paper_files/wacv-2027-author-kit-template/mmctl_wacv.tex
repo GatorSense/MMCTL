@@ -344,7 +344,7 @@ over all evaluation pairs, where higher values indicate that samples close in an
 \begin{table}[t]
 \centering
 \caption{\new{
-Embedding-space quality across datasets. \textbf{Sil} is the class-label silhouette coefficient (cosine); \textbf{$\rho$} columns are Spearman correlations between pairwise embedding distances and pairwise annotation distances for box (B), position (P), and height (H). Higher is better for all columns ($\uparrow$); best per column in bold. Fusion baselines are concatenation, SupCon, cross-attention, and Transformer pooling (DeepSet omitted).
+Embedding-space quality across datasets. \textbf{Sil} is the class-label silhouette coefficient (cosine); \textbf{$\rho$} columns are Spearman correlations between pairwise embedding distances and pairwise annotation distances for box (B), position (P), and height (H). Higher is better for all columns ($\uparrow$); best per column in bold. Fusion baselines are concatenation, SupCon, cross-attention, and Transformer pooling.
 }}
 \label{tab:latent_alignment}
 {\color{red}
@@ -507,7 +507,7 @@ Downstream task performance using unimodal and fused embeddings. Higher values i
 \label{subsec:weight-e2e}
 
 \new{\noindent\textbf{Class-weight sensitivity (NEON).}
-The joint annotation vector exposes one free knob per task, the weight $w_t$ (Eq.~\eqref{eq:ann-weight}). We sweep the class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ on NEON with the continuous-task weights fixed at $1.0$, using the released full-set MMCTL embeddings under the frozen task-head protocol. As shown in Fig.~\ref{fig:neon_ablation} and Table~\ref{tab:neon_weight_ablation}, increasing $w_{\text{class}}$ sharpens species separation in the embedding space and improves classification accuracy, with a mild trade-off against continuous-attribute regression. This confirms that the weight behaves as intended---trading semantic compactness against geometric spread---and motivates the balanced default used in the main tables.}
+The joint annotation vector exposes one free knob per task, the weight $w_t$ (Eq.~\eqref{eq:ann-weight}). We sweep the class weight $w_{\text{class}}\in\{0.5,0.8,1.0,1.5\}$ on NEON with the continuous-task weights fixed at $1.0$, using the released full-set MMCTL embeddings under the frozen task-head protocol. As shown in Fig.~\ref{fig:neon_ablation} and Table~\ref{tab:neon_weight_ablation}, increasing $w_{\text{class}}$ sharpens species separation in the embedding space and improves classification accuracy, with a mild trade-off against continuous-attribute regression. This confirms that the weight behaves as intended by trading semantic compactness against geometric spread and motivates the balanced default used in the main tables.}
 
 \begin{figure*}[!htb]
     \centering
@@ -518,7 +518,7 @@ The joint annotation vector exposes one free knob per task, the weight $w_t$ (Eq
 
 \begin{table}[t]
 \centering
-\caption{\new{NEON class-weight ablation (R1.4). MMCTL trained with class-label weight $w_{\text{class}}$ swept while box/height weights are fixed at $1.0$; frozen task-head protocol, mean$\pm$std over $5$ folds. Increasing $w_{\text{class}}$ steadily improves classification while box/height regression stays stable, trading semantic compactness against continuous spread. Best per column in bold.}}
+\caption{\new{NEON class-weight ablation. MMCTL trained with class-label weight $w_{\text{class}}$ swept while box/height weights are fixed at $1.0$; frozen task-head protocol, mean$\pm$std over $5$ folds. Increasing $w_{\text{class}}$ steadily improves classification while box/height regression stays stable, trading semantic compactness against continuous spread. Best per column in bold.}}
 \label{tab:neon_weight_ablation}
 {\color{red}
 \begin{tabular}{c c c c}
@@ -542,7 +542,7 @@ The main protocol freezes modality encoders and trains task heads on fixed embed
 
 \new{\noindent\textbf{Missing modality.} As a frozen-embedding probe on released AWIR test embeddings, we zero one $1024$-d half of the $2048$-d MMCTL joint vector (RGB$|$thermal), L2-normalize, and retrain linear probes. Full joint proxy accuracy is $93.44\pm1.37\%$. Dropping thermal yields $84.69\pm2.04\%$ ($-8.75$~pts); dropping RGB yields $86.15\pm1.99\%$ ($-7.29$~pts). Both remain above unimodal RGB/thermal probe accuracies ($\approx$78--80\%), indicating complementary but non-redundant modality use under this probe protocol.}
 
-\new{\noindent\textbf{Triplet compute.} With batch size $32$, modality concatenation yields $64$ embeddings and an upper bound of $249{,}984$ ordered triplets per batch ($\approx 2.0$M per epoch at eight steps) before the annotation-order mask; actual positives are data-dependent. A microbenchmark on Apple M4 CPU measures $\approx 1.7$\,s per training step at batch size $8$; the full AWIR training schedule was not re-timed on this machine.}
+\new{\noindent\textbf{Triplet compute.} With batch size $32$, modality concatenation yields $64$ embeddings and an upper bound of $249{,}984$ ordered triplets per batch ($\approx 2.0$M per epoch at eight steps) before the annotation-order mask; actual positives are data-dependent. A microbenchmark on Apple M4 CPU measures $\approx 1.7$\,s per training step at batch size $8$.}
 
 
 \section{Conclusion}
