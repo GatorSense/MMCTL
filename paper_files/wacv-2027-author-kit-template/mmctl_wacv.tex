@@ -297,15 +297,14 @@ Evaluation targets embedding-level fusion under a two-stage frozen-encoder proto
 Next, task heads are optimized using supervised losses appropriate to each task, with identical architectures and optimization settings across all fusion methods. Training runs for up to $3000$ epochs with early stopping based on validation performance and a patience of $1000$ epochs. Optimization uses Adam with a learning rate of $10^{-3}$ and weight decay of $10^{-4}$. Batch size is set to $4$ for AWIR with no gradient clipping applied, while NEON uses a batch size of $32$ with gradient clipping enabled at a norm of $5$. Task heads use a shallow multilayer perceptron for both classification and regression tasks. Code for reproducing all experiments can be found at
 \href{https://github.com/GatorSense/MMCTL}{github.com/GatorSense/MMCTL}.
 
-\paragraph{\red{Reproducibility.}}
-\red{AWIR and NEON tables use released full-set embeddings ($N{=}240$ AWIR; $N{=}592$ NEON) with independently trained unimodal encoders and MMCTL. SupCon, cross-attention, and Transformer fusion are trained on frozen unimodal embeddings under a $50/50$ holdout plus $k$-fold protocol ($8$ AWIR / $5$ NEON) and paper task-head settings (Adam, $3000$ epochs, patience $1000$).}
+\new{\noindent\textbf{Reproducibility.} AWIR and NEON tables use released full-set embeddings ($N{=}240$ AWIR; $N{=}592$ NEON) with independently trained unimodal encoders and MMCTL. SupCon, cross-attention, and Transformer fusion are trained on frozen unimodal embeddings under a $50/50$ holdout plus $k$-fold protocol ($8$ AWIR / $5$ NEON) and paper task-head settings (Adam, $3000$ epochs, patience $1000$).}
 
 \subsection{Latent Space Quality Metrics}
 \label{sec:latent_space_quality_metrics}
 {\color{red}
 Latent space quality is evaluated with two standard, directly interpretable metrics: one that gauges categorical class separation and one that gauges how faithfully the geometry represents differences in the continuous annotations. Both are computed on L$_2$-normalized embeddings with cosine geometry, matching the MMCTL training distance.
 
-\paragraph{Class separation}
+\noindent\textbf{Class separation.}
 We report the silhouette coefficient over class labels. For sample $i$ with class $c_i$, let $a_i$ be its mean cosine distance to other same-class embeddings and $b_i$ its mean cosine distance to the nearest other class; the silhouette is
 \begin{equation}
 \label{eq:silhouette}
@@ -318,7 +317,7 @@ We report the silhouette coefficient over class labels. For sample $i$ with clas
 \end{equation}
 where higher values indicate more compact, better-separated classes.
 
-\paragraph{Continuous-annotation representation}
+\noindent\textbf{Continuous-annotation representation.}
 To measure whether embedding geometry reflects graded annotation differences, we correlate pairwise distances. For supervision source $s \in \{\mathrm{box}, \mathrm{pos}, \mathrm{height}\}$, let $d_E(i,j)$ be the cosine distance between embeddings and $d_s(i,j)$ the Euclidean distance between the corresponding annotation vectors. The distance-preservation score is the Spearman rank correlation
 \begin{equation}
 \label{eq:spearman}
@@ -336,7 +335,7 @@ over all evaluation pairs, where higher values indicate that samples close in an
 
 
 \subsection{Experimental Results}
-\new{Latent space quality is first evaluated using the silhouette and distance-preservation metrics defined in Subsection~\ref{sec:latent_space_quality_metrics}. Table~\ref{tab:latent_alignment} compares class separation and continuous-annotation representation across unimodal encoders, fusion methods, and MMCTL.}
+\new{\noindent\textbf{Latent-space quality.} Latent space quality is first evaluated using the silhouette and distance-preservation metrics defined in Subsection~\ref{sec:latent_space_quality_metrics}. Table~\ref{tab:latent_alignment} compares class separation and continuous-annotation representation across unimodal encoders, fusion methods, and MMCTL.}
 
 \new{No single baseline is coherent on both fronts. Class-supervised fusion (SupCon, Transformer) attains the highest class silhouette but collapses continuous geometry, with position/height correlations near zero or negative (e.g., AWIR position $\rho\!=\!-0.02$ for both). Conversely, the modality that directly senses an attribute can lead its continuous column---LiDAR attains the best NEON height correlation ($\rho\!=\!0.571$)---yet separates classes poorly (silhouette $-0.23$). MMCTL is the only method that is simultaneously strong on both: it gives the best continuous representation on AWIR (box $\rho\!=\!0.278$, position $\rho\!=\!0.223$, the latter far above every baseline), the second-best class silhouette on NEON behind SupCon, and the second-best NEON height correlation behind LiDAR. Rather than maximizing any one column, annotation-driven multi-modal supervision yields a balanced, coherent geometry that reflects both semantic classes and continuous attributes at once.}
 
@@ -391,7 +390,7 @@ Embedding-space quality across datasets. \textbf{Sil} is the class-label silhoue
 }
 \end{table}
 
-Table~\ref{tab:downstream_performance_tasks} reports downstream performance using frozen embeddings and highlights how MMCTL compares directly with state-of-the-art fusion strategies.
+\new{\noindent\textbf{Downstream task performance.}} Table~\ref{tab:downstream_performance_tasks} reports downstream performance using frozen embeddings and highlights how MMCTL compares directly with state-of-the-art fusion strategies.
 
 \red{On AWIR, MMCTL remains best across classification and both geometric regression tasks under the full-set embedding protocol, ahead of SupCon, cross-attention, Transformer, and concatenation. SupCon is the strongest competing classifier ($89.1\%$) but collapses on box/position $R^2$, while cross-attention and Transformer improve over unimodal methods without matching MMCTL's balanced geometry.}
 
@@ -399,19 +398,9 @@ Table~\ref{tab:downstream_performance_tasks} reports downstream performance usin
 
 \red{Across both datasets, the comparison demonstrates that stronger fusion (SupCon, cross-attention, Transformer) can improve feature integration but does not guarantee coherent annotation-aligned geometry. MMCTL extends beyond feature aggregation by explicitly structuring the latent space around joint semantic and geometric relationships.}
 
-\new{Paired one-sided Wilcoxon tests across the $8$ AWIR folds quantify the continuous-geometry advantage: MMCTL significantly exceeds the best competing method on position correlation (vs.\ RGB, $p{=}0.0078$) and shows the highest box correlation (vs.\ Concat., $p{=}0.098$, a positive trend). As expected from Table~\ref{tab:latent_alignment}, MMCTL does not win class silhouette, where the class-supervised SupCon leads; the value of MMCTL is that no other method is competitive on the continuous axes without sacrificing class structure. Supporting linear probes on released test embeddings rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.}
+\new{\noindent\textbf{Statistical significance.} Paired one-sided Wilcoxon signed-rank tests~\cite{wilcoxon1945individual} across the $8$ AWIR folds quantify the continuous-geometry advantage: MMCTL significantly exceeds the best competing method on position correlation (vs.\ RGB, $p{=}0.0078$) and shows the highest box correlation (vs.\ Concat., $p{=}0.098$, a positive trend). As expected from Table~\ref{tab:latent_alignment}, MMCTL does not win class silhouette, where the class-supervised SupCon leads; the value of MMCTL is that no other method is competitive on the continuous axes without sacrificing class structure. Supporting linear probes on released test embeddings rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.}
 
-\new{The NEON embedding spaces in Fig.~\ref{fig:emb_neon} extend this comparison to a ten-species, three-modality setting. Sizing the same fusion-method projections by bounding-box area and by canopy height shows that MMCTL organizes the shared space so that both geometric attributes vary coherently across the embedding, whereas task-driven fusion embeddings expose class structure only weakly and show no consistent size or height gradient.}
-
-\begin{figure*}[!htb]
-    \centering
-    \includegraphics[width=\textwidth]{figures/neon_embedding_space_boxsize.pdf}\\[2pt]
-    \includegraphics[width=\textwidth]{figures/neon_embedding_space_height.pdf}
-    \caption{\new{NEON embedding space across fusion methods (Concat, SupCon, cross-attention, Transformer, MMCTL; PCA top, t-SNE bottom within each block), colored by species. Points are sized by bounding-box area (top block) and by canopy height (bottom block). MMCTL produces species-separated clusters whose point sizes vary smoothly, reflecting continuous box and height geometry, while task-driven baselines mix species and lack an ordered geometric gradient.}}
-    \label{fig:emb_neon}
-\end{figure*}
-
-\new{To probe whether the continuous geometry is locally smooth \emph{within} a class, Fig.~\ref{fig:emb_zoom} zooms into individual class clusters and colors each class's points by its continuous label, so a smooth spatial color gradient signals a smooth within-class transition. Table~\ref{tab:perclass_smooth} quantifies this as the within-class analogue of the distance-preservation score: the Spearman correlation between pairwise embedding distances and pairwise differences of the continuous label, restricted to each class (higher is smoother; computed on the released full sets). Dataset-wide, MMCTL yields the smoothest AWIR box-area transition ($\rho{=}0.272$) and a competitive NEON transition. Among the four featured classes ($\star$), MMCTL transitions smoothly on horse (box area, $\rho{=}0.361$) while Concat/Transformer are marginally smoother, is essentially tied on cow, is the \emph{smoothest} method within PIPA2 (canopy height, $\rho{=}0.504$), and is a close second on PSME ($\rho{=}0.593$ vs.\ Transformer $0.662$). Consistent with Table~\ref{tab:latent_alignment}, a task-driven baseline can match or exceed MMCTL on a single continuous axis inside a class, but only MMCTL pairs this within-class smoothness with strong class separation.}
+\new{\noindent\textbf{Within-class continuous transitions.} To probe whether the continuous geometry is locally smooth \emph{within} a class, Fig.~\ref{fig:emb_zoom} zooms into individual class clusters and colors each class's points by its continuous label, so a smooth spatial color gradient signals a smooth within-class transition. Table~\ref{tab:perclass_smooth} quantifies this as the within-class analogue of the distance-preservation score: the Spearman correlation between pairwise embedding distances and pairwise differences of the continuous label, restricted to each class (higher is smoother; computed on the released full sets). Dataset-wide, MMCTL yields the smoothest AWIR box-area transition ($\rho{=}0.272$) and a competitive NEON transition. Among the four featured classes ($\star$), MMCTL transitions smoothly on horse (box area, $\rho{=}0.361$) while Concat/Transformer are marginally smoother, is essentially tied on cow, is the \emph{smoothest} method within PIPA2 (canopy height, $\rho{=}0.504$), and is a close second on PSME ($\rho{=}0.593$ vs.\ Transformer $0.662$). Consistent with Table~\ref{tab:latent_alignment}, a task-driven baseline can match or exceed MMCTL on a single continuous axis inside a class, but only MMCTL pairs this within-class smoothness with strong class separation.}
 
 \begin{figure*}[!htb]
     \centering
@@ -598,11 +587,9 @@ The main protocol freezes modality encoders and trains task heads on fixed embed
 \subsection{\red{Missing Modality and Compute}}
 \label{subsec:additional-analyses}
 
-\paragraph{\red{Missing modality.}}
-\red{As a frozen-embedding probe on released AWIR test embeddings, we zero one $1024$-d half of the $2048$-d MMCTL joint vector (RGB$|$thermal), L2-normalize, and retrain linear probes. Full joint proxy accuracy is $93.44\pm1.37\%$. Dropping thermal yields $84.69\pm2.04\%$ ($-8.75$~pts); dropping RGB yields $86.15\pm1.99\%$ ($-7.29$~pts). Both remain above unimodal RGB/thermal probe accuracies ($\approx$78--80\%), indicating complementary but non-redundant modality use under this probe protocol.}
+\new{\noindent\textbf{Missing modality.} As a frozen-embedding probe on released AWIR test embeddings, we zero one $1024$-d half of the $2048$-d MMCTL joint vector (RGB$|$thermal), L2-normalize, and retrain linear probes. Full joint proxy accuracy is $93.44\pm1.37\%$. Dropping thermal yields $84.69\pm2.04\%$ ($-8.75$~pts); dropping RGB yields $86.15\pm1.99\%$ ($-7.29$~pts). Both remain above unimodal RGB/thermal probe accuracies ($\approx$78--80\%), indicating complementary but non-redundant modality use under this probe protocol.}
 
-\paragraph{\red{Triplet compute.}}
-\red{With batch size $32$, modality concatenation yields $64$ embeddings and an upper bound of $249{,}984$ ordered triplets per batch ($\approx 2.0$M per epoch at eight steps) before the annotation-order mask; actual positives are data-dependent. A microbenchmark on Apple M4 CPU measures $\approx 1.7$\,s per training step at batch size $8$; the full AWIR training schedule was not re-timed on this machine.}
+\new{\noindent\textbf{Triplet compute.} With batch size $32$, modality concatenation yields $64$ embeddings and an upper bound of $249{,}984$ ordered triplets per batch ($\approx 2.0$M per epoch at eight steps) before the annotation-order mask; actual positives are data-dependent. A microbenchmark on Apple M4 CPU measures $\approx 1.7$\,s per training step at batch size $8$; the full AWIR training schedule was not re-timed on this machine.}
 
 
 \section{Conclusion}
