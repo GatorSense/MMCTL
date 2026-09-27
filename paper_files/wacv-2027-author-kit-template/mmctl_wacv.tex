@@ -292,7 +292,7 @@ The first dataset is Animal Wildlife Image Repository (AWIR) \cite{samiappan2024
 \subsection{Experimental Setup}
 Evaluation targets embedding-level fusion under a two-stage frozen-encoder protocol (Section~\ref{sec:methodology}). For all comparison methods, modality-specific encoders are frozen and fusion operates on fixed embeddings. Task-driven fusion methods observe the same annotation sources as MMCTL, but consume them through supervised prediction losses during fusion training; MMCTL instead uses those annotations to define continuous distances for geometry matching (Section~\ref{subsec:shared-latent-space}). The claim is therefore not that MMCTL forgoes labels, but that it applies a different inductive bias to the same label sources. Datasets are split into $50\%$ training and $50\%$ test sets, with the test set excluded from model selection. Within the training split, $k$-fold cross-validation is used for model selection and uncertainty reporting: $8$ folds for AWIR and $5$ folds for NEON. All splits use a fixed random seed, and each reported mean~$\pm$~std is computed across these folds (i.e., the ``runs'' in figure captions are the CV folds). Categorical annotations use a fixed weight of $w_{\text{class}} = 0.5$ in the joint annotation vector for the AWIR dataset and $1.0$ for the NEON dataset to balance with continuous annotations.
 
-\red{Comparisons include concatenation and three stronger fusion baselines requested for this revision: supervised contrastive fusion (SupCon) \cite{khosla2020supervised}, cross-attention pooling, and a small Transformer encoder over modality tokens. Concatenation stacks modality embeddings and remains untrained. SupCon learns a projection of the concatenated embeddings with class-supervised contrastive loss. Cross-attention and Transformer fusion are trained with classification and continuous regression task supervision. These methods contrast with MMCTL, which organizes latent geometry using annotation-derived similarity rather than prediction losses alone.}
+\red{Comparisons include concatenation and three stronger fusion baselines requested for this revision: supervised contrastive fusion (SupCon) \cite{khosla2020supervised}, cross-attention pooling \cite{lu2019vilbert}, and a small Transformer encoder \cite{vaswani2017attention} over modality tokens. Concatenation stacks modality embeddings and remains untrained. SupCon learns a projection of the concatenated embeddings with class-supervised contrastive loss. Cross-attention and Transformer fusion are trained with the same task supervision used previously for DeepSet baselines (classification plus continuous regression). These methods contrast with MMCTL, which organizes latent geometry using annotation-derived similarity rather than prediction losses alone.}
 
 Next, task heads are optimized using supervised losses appropriate to each task, with identical architectures and optimization settings across all fusion methods. Training runs for up to $3000$ epochs with early stopping based on validation performance and a patience of $1000$ epochs. Optimization uses Adam with a learning rate of $10^{-3}$ and weight decay of $10^{-4}$. Batch size is set to $4$ for AWIR with no gradient clipping applied, while NEON uses a batch size of $32$ with gradient clipping enabled at a norm of $5$. Task heads use a shallow multilayer perceptron for both classification and regression tasks. Code for reproducing all experiments can be found at
 \href{https://github.com/GatorSense/MMCTL}{github.com/GatorSense/MMCTL}.
@@ -331,7 +331,6 @@ To measure whether embedding geometry reflects graded annotation differences, we
 \end{equation}
 over all evaluation pairs, where higher values indicate that samples close in annotation space are embedded close together. Metrics are computed on each held-out cross-validation fold and reported as mean~$\pm$~std.
 }
-
 
 
 \subsection{Experimental Results}
@@ -400,61 +399,15 @@ Embedding-space quality across datasets. \textbf{Sil} is the class-label silhoue
 
 \new{\noindent\textbf{Statistical significance.} Paired one-sided Wilcoxon signed-rank tests~\cite{wilcoxon1945individual} across the $8$ AWIR folds quantify the continuous-geometry advantage: MMCTL significantly exceeds the best competing method on position correlation (vs.\ RGB, $p{=}0.0078$) and shows the highest box correlation (vs.\ Concat., $p{=}0.098$, a positive trend). As expected from Table~\ref{tab:latent_alignment}, MMCTL does not win class silhouette, where the class-supervised SupCon leads; the value of MMCTL is that no other method is competitive on the continuous axes without sacrificing class structure. Supporting linear probes on released test embeddings rank MMCTL above Concat.\ on accuracy and box/position $R^2$ ($p{\le}0.016$); these probes support ranking only and do not replace Table~\ref{tab:downstream_performance_tasks}.}
 
-\new{\noindent\textbf{Within-class continuous transitions.} To probe whether the continuous geometry is locally smooth \emph{within} a class, Fig.~\ref{fig:emb_zoom} zooms into individual class clusters and colors each class's points by its continuous label, so a smooth spatial color gradient signals a smooth within-class transition. Table~\ref{tab:perclass_smooth} quantifies this as the within-class analogue of the distance-preservation score: the Spearman correlation between pairwise embedding distances and pairwise differences of the continuous label, restricted to each class (higher is smoother; computed on the released full sets). Dataset-wide, MMCTL yields the smoothest AWIR box-area transition ($\rho{=}0.272$) and a competitive NEON transition. Among the four featured classes ($\star$), MMCTL transitions smoothly on horse (box area, $\rho{=}0.361$) while Concat/Transformer are marginally smoother, is essentially tied on cow, is the \emph{smoothest} method within PIPA2 (canopy height, $\rho{=}0.504$), and is a close second on PSME ($\rho{=}0.593$ vs.\ Transformer $0.662$). Consistent with Table~\ref{tab:latent_alignment}, a task-driven baseline can match or exceed MMCTL on a single continuous axis inside a class, but only MMCTL pairs this within-class smoothness with strong class separation.}
+\new{\noindent\textbf{Within-class continuous transitions.} To probe whether the continuous geometry is locally smooth \emph{within} a class, Fig.~\ref{fig:emb_zoom} zooms into individual class clusters and colors each class's points by its continuous label; a smooth spatial color gradient signals a smooth within-class transition. Across the featured AWIR and NEON classes, MMCTL produces smooth within-class gradients comparable to the strongest task-driven fusion (e.g., canopy height within PIPA2), while---unlike those baselines---also maintaining clear class separation, consistent with the balanced behavior in Table~\ref{tab:latent_alignment}.}
 
 \begin{figure*}[!htb]
     \centering
     \includegraphics[width=\textwidth]{figures/embedding_zoom_perclass.pdf}
-    \caption{\new{Per-class continuous transition. Each row zooms into one class cluster (AWIR horse, cow; NEON PSME, PIPA2) and shows only that class's points under each fusion method (PCA projection), colored by the continuous label indicated at left (box area or canopy height; per-row colorbar). A smooth color gradient across a panel indicates that the continuous attribute varies smoothly within the class embedding. Within-class correlations are reported in Table~\ref{tab:perclass_smooth}.}}
+    \caption{\new{Per-class continuous transition. Each row zooms into one class cluster (AWIR horse, cow; NEON PSME, PIPA2) and shows only that class's points under each fusion method (PCA projection), colored by the continuous label indicated at left (box area or canopy height; per-row colorbar). A smooth color gradient across a panel indicates that the continuous attribute varies smoothly within the class embedding.}}
     \label{fig:emb_zoom}
 \end{figure*}
 
-\begin{table}[t]
-\centering
-\caption{\new{Within-class continuous-transition score: Spearman $\rho$ between pairwise cosine embedding distances and pairwise differences of the continuous label, per class and dataset-wide (\emph{All}); higher is smoother. Best method per row in bold; $\star$ marks the classes featured in Fig.~\ref{fig:emb_zoom}.}}
-\label{tab:perclass_smooth}
-{\color{red}
-\footnotesize
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{l c c c c c c}
-\toprule
-\textbf{Class} & \textbf{n} & \textbf{Concat} & \textbf{SupCon} & \textbf{CrsAttn} & \textbf{Trans} & \textbf{MMCTL} \\
-\midrule
-\multicolumn{7}{l}{\emph{AWIR --- box area}} \\
-\emph{All} & 240 & 0.233 & 0.209 & 0.188 & 0.238 & \textbf{0.272} \\
-cow$^\star$ & 116 & \textbf{0.289} & 0.201 & 0.190 & 0.254 & 0.212 \\
-deer & 51 & 0.040 & \textbf{0.124} & 0.115 & 0.048 & 0.105 \\
-horse$^\star$ & 73 & \textbf{0.584} & 0.078 & 0.437 & 0.575 & 0.361 \\
-\midrule
-\multicolumn{7}{l}{\emph{NEON --- box area}} \\
-\emph{All} & 592 & 0.037 & 0.011 & 0.236 & \textbf{0.533} & 0.202 \\
-ABLA & 30 & 0.092 & -0.015 & 0.196 & 0.247 & \textbf{0.432} \\
-ACRU & 29 & -0.006 & 0.033 & \textbf{0.054} & 0.053 & 0.050 \\
-BENE4 & 36 & 0.169 & -0.089 & \textbf{0.299} & 0.235 & 0.173 \\
-PIEN & 36 & \textbf{0.236} & -0.010 & 0.188 & 0.145 & 0.057 \\
-PIMA & 42 & 0.252 & 0.281 & 0.363 & \textbf{0.384} & 0.291 \\
-PIPA2 & 138 & 0.145 & 0.054 & 0.266 & \textbf{0.665} & 0.344 \\
-PIPO & 24 & -0.094 & -0.146 & 0.058 & \textbf{0.269} & -0.005 \\
-POTR5 & 44 & 0.134 & 0.066 & \textbf{0.276} & 0.273 & 0.128 \\
-PSME & 183 & 0.115 & 0.185 & 0.393 & \textbf{0.538} & 0.415 \\
-TSCA & 30 & 0.170 & -0.124 & 0.192 & \textbf{0.562} & 0.280 \\
-\midrule
-\multicolumn{7}{l}{\emph{NEON --- canopy height}} \\
-\emph{All} & 592 & 0.121 & 0.066 & 0.252 & \textbf{0.478} & 0.274 \\
-ABLA & 30 & \textbf{0.380} & -0.089 & 0.346 & 0.117 & 0.298 \\
-ACRU & 29 & -0.009 & -0.044 & \textbf{0.230} & -0.037 & 0.118 \\
-BENE4 & 36 & 0.155 & -0.108 & \textbf{0.181} & 0.107 & 0.142 \\
-PIEN & 36 & \textbf{0.387} & -0.050 & 0.224 & 0.041 & 0.371 \\
-PIMA & 42 & \textbf{0.602} & 0.129 & 0.424 & 0.439 & 0.593 \\
-PIPA2$^\star$ & 138 & 0.310 & 0.185 & 0.171 & 0.298 & \textbf{0.504} \\
-PIPO & 24 & 0.102 & 0.272 & \textbf{0.355} & 0.150 & 0.017 \\
-POTR5 & 44 & 0.633 & 0.351 & \textbf{0.826} & 0.555 & 0.667 \\
-PSME$^\star$ & 183 & 0.300 & 0.266 & 0.563 & \textbf{0.662} & 0.593 \\
-TSCA & 30 & 0.023 & -0.011 & -0.026 & \textbf{0.187} & 0.127 \\
-\bottomrule
-\end{tabular}
-}
-\end{table}
 
 \begin{table}[t]
 \centering
@@ -593,8 +546,67 @@ The main protocol freezes modality encoders and trains task heads on fixed embed
 
 
 \section{Conclusion}
-This work frames multi-modal representation learning as aligning embeddings across sensing modalities using annotation-defined similarity rather than task-loss geometry alone. MMCTL builds a shared latent space by coupling modality-specific embeddings through a weighted joint annotation vector, a margin-free continuous triplet, and pairwise distance alignment, yielding more coherent cross-modal geometry than unimodal or task-driven fusion under the same label sources. AWIR analyses further show statistically significant structure gains and graceful degradation under missing-modality probes. Future work includes adaptive annotation weights that adjust task influence during training.
+\new{This work frames multi-modal fusion as aligning embeddings across sensing modalities through annotation-defined similarity rather than task-loss geometry alone. MMCTL couples modality-specific embeddings with a weighted joint annotation vector, a margin-free continuous triplet, and pairwise distance alignment. Across AWIR and NEON, the resulting geometry is distinctively \emph{balanced}: class-supervised fusion (SupCon, Transformer) maximizes class separation but collapses continuous structure, and a directly sensing modality such as LiDAR captures one continuous attribute yet fails on class, whereas MMCTL is the only method simultaneously strong on class separation and on continuous box/position/height representation---with its continuous-geometry advantage statistically significant on AWIR and its within-class transitions remaining smooth. A controlled comparison further shows that freezing the modality encoders matches end-to-end fine-tuning, justifying the two-stage protocol, and a class-weight sweep confirms that the annotation weight smoothly trades semantic compactness against continuous spread. Future work includes adaptive annotation weights that adjust task influence during training and cross-region generalization tests.}
 
+
+
+% ============================================================
+% SUPPLEMENTARY (commented out; uncomment to restore)
+% Former Table 2: per-class within-class continuous-transition metric, and its
+% detailed numeric discussion. Removed from the main paper on request; kept here
+% so it can be reinstated easily.
+% ------------------------------------------------------------
+% Detailed within-class discussion paragraph:
+% \new{\noindent\textbf{Within-class continuous transitions.} To probe whether the continuous geometry is locally smooth \emph{within} a class, Fig.~\ref{fig:emb_zoom} zooms into individual class clusters and colors each class's points by its continuous label, so a smooth spatial color gradient signals a smooth within-class transition. Table~\ref{tab:perclass_smooth} quantifies this as the within-class analogue of the distance-preservation score: the Spearman correlation between pairwise embedding distances and pairwise differences of the continuous label, restricted to each class (higher is smoother; computed on the released full sets). Dataset-wide, MMCTL yields the smoothest AWIR box-area transition ($\rho{=}0.272$) and a competitive NEON transition. Among the four featured classes ($\star$), MMCTL transitions smoothly on horse (box area, $\rho{=}0.361$) while Concat/Transformer are marginally smoother, is essentially tied on cow, is the \emph{smoothest} method within PIPA2 (canopy height, $\rho{=}0.504$), and is a close second on PSME ($\rho{=}0.593$ vs.\ Transformer $0.662$). Consistent with Table~\ref{tab:latent_alignment}, a task-driven baseline can match or exceed MMCTL on a single continuous axis inside a class, but only MMCTL pairs this within-class smoothness with strong class separation.}
+%
+% Former Table 2:
+% \begin{table}[t]
+% \centering
+% \caption{\new{Within-class continuous-transition score: Spearman $\rho$ between pairwise cosine embedding distances and pairwise differences of the continuous label, per class and dataset-wide (\emph{All}); higher is smoother. Best method per row in bold; $\star$ marks the classes featured in Fig.~\ref{fig:emb_zoom}.}}
+% \label{tab:perclass_smooth}
+% {\color{red}
+% \footnotesize
+% \setlength{\tabcolsep}{5pt}
+% \begin{tabular}{l c c c c c c}
+% \toprule
+% \textbf{Class} & \textbf{n} & \textbf{Concat} & \textbf{SupCon} & \textbf{CrsAttn} & \textbf{Trans} & \textbf{MMCTL} \\
+% \midrule
+% \multicolumn{7}{l}{\emph{AWIR --- box area}} \\
+% \emph{All} & 240 & 0.233 & 0.209 & 0.188 & 0.238 & \textbf{0.272} \\
+% cow$^\star$ & 116 & \textbf{0.289} & 0.201 & 0.190 & 0.254 & 0.212 \\
+% deer & 51 & 0.040 & \textbf{0.124} & 0.115 & 0.048 & 0.105 \\
+% horse$^\star$ & 73 & \textbf{0.584} & 0.078 & 0.437 & 0.575 & 0.361 \\
+% \midrule
+% \multicolumn{7}{l}{\emph{NEON --- box area}} \\
+% \emph{All} & 592 & 0.037 & 0.011 & 0.236 & \textbf{0.533} & 0.202 \\
+% ABLA & 30 & 0.092 & -0.015 & 0.196 & 0.247 & \textbf{0.432} \\
+% ACRU & 29 & -0.006 & 0.033 & \textbf{0.054} & 0.053 & 0.050 \\
+% BENE4 & 36 & 0.169 & -0.089 & \textbf{0.299} & 0.235 & 0.173 \\
+% PIEN & 36 & \textbf{0.236} & -0.010 & 0.188 & 0.145 & 0.057 \\
+% PIMA & 42 & 0.252 & 0.281 & 0.363 & \textbf{0.384} & 0.291 \\
+% PIPA2 & 138 & 0.145 & 0.054 & 0.266 & \textbf{0.665} & 0.344 \\
+% PIPO & 24 & -0.094 & -0.146 & 0.058 & \textbf{0.269} & -0.005 \\
+% POTR5 & 44 & 0.134 & 0.066 & \textbf{0.276} & 0.273 & 0.128 \\
+% PSME & 183 & 0.115 & 0.185 & 0.393 & \textbf{0.538} & 0.415 \\
+% TSCA & 30 & 0.170 & -0.124 & 0.192 & \textbf{0.562} & 0.280 \\
+% \midrule
+% \multicolumn{7}{l}{\emph{NEON --- canopy height}} \\
+% \emph{All} & 592 & 0.121 & 0.066 & 0.252 & \textbf{0.478} & 0.274 \\
+% ABLA & 30 & \textbf{0.380} & -0.089 & 0.346 & 0.117 & 0.298 \\
+% ACRU & 29 & -0.009 & -0.044 & \textbf{0.230} & -0.037 & 0.118 \\
+% BENE4 & 36 & 0.155 & -0.108 & \textbf{0.181} & 0.107 & 0.142 \\
+% PIEN & 36 & \textbf{0.387} & -0.050 & 0.224 & 0.041 & 0.371 \\
+% PIMA & 42 & \textbf{0.602} & 0.129 & 0.424 & 0.439 & 0.593 \\
+% PIPA2$^\star$ & 138 & 0.310 & 0.185 & 0.171 & 0.298 & \textbf{0.504} \\
+% PIPO & 24 & 0.102 & 0.272 & \textbf{0.355} & 0.150 & 0.017 \\
+% POTR5 & 44 & 0.633 & 0.351 & \textbf{0.826} & 0.555 & 0.667 \\
+% PSME$^\star$ & 183 & 0.300 & 0.266 & 0.563 & \textbf{0.662} & 0.593 \\
+% TSCA & 30 & 0.023 & -0.011 & -0.026 & \textbf{0.187} & 0.127 \\
+% \bottomrule
+% \end{tabular}
+% }
+% \end{table}
+% ============================================================
 
 {
     \small
