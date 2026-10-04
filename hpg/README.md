@@ -51,10 +51,18 @@ sbatch --export=ALL,CMD="python scripts/ablation_loss_components_neon.py" hpg/sl
 sbatch --export=ALL,CMD="python scripts/retune_transformer_neon.py"       hpg/slurm/run.slurm
 ```
 
-## 4. Monitor
+## 4. Monitor & pull results
 ```bash
 squeue -u $USER
 tail -f /blue/azare/zhou.m/MMCTL/logs/<jobname>_<jobid>.out
+```
+
+When jobs finish, pull the artifacts back to your local repo (run on your Mac):
+```bash
+bash hpg/sync_pull.sh results     # results/*.json,*.md (metrics, ablations)
+bash hpg/sync_pull.sh outputs     # outputs/ (checkpoints, embeddings)
+bash hpg/sync_pull.sh all         # both (default)
+bash hpg/sync_pull.sh results --dry-run   # preview without copying
 ```
 
 ## Notes
