@@ -36,6 +36,12 @@ export PYTHONNOUSERSITE=1
 source "${VENV_ACTIVATE}"
 export PATH="${PROJECT_DIR}/${VENV}/bin:${PATH}"
 
+# Make the repo-root packages (mmctl/, scripts/) importable. The project is not
+# pip-installed into the venv, and `python mmctl/foo.py` only puts mmctl/ on the
+# path, so `import mmctl` fails without this. Only the repo root is added (no
+# cluster site-packages), so it cannot shadow venv packages.
+export PYTHONPATH="${PROJECT_DIR}"
+
 if [[ ! -x "${VENV_PYTHON}" ]]; then
   echo "ERROR: venv python not executable: ${VENV_PYTHON}"
   exit 1
