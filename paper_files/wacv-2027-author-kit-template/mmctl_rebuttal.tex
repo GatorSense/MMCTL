@@ -186,4 +186,88 @@ reference~[8].}
 place of arXiv preprints where available, including reference~[8]. This audit is
 being finalized against the compiled reference list.}
 
+%========================================================================
+% ROUND-2 (second-round) comments. New relative to the v1 rebuttal -> in red.
+{\color{red}
+\section{Second-Round Comments}
+
+\noindent We thank the reviewer for the second round of comments. The additions
+below---including two new experiments (a loss-component ablation and a Transformer
+re-tuning study)---are all marked in red in the revised manuscript.
+
+\cmt{1}{End the Introduction with a concise contribution statement; move the
+Related-Work contribution list there and describe the contributions conceptually,
+not by equation number.}
+\resp{Done. The contribution list now ends the Introduction as a single
+paragraph, with each point phrased conceptually: (i)~a joint annotation vector
+fusing categorical labels with continuous attributes into one normalized,
+task-weighted similarity target; (ii)~a margin-free continuous triplet whose
+required separation adapts to each triplet's annotation-distance gap;
+(iii)~a pairwise distance-alignment term; and (iv)~the extension to a multi-modal
+shared latent space. No equation numbers appear in the statement.}
+
+\cmt{2}{Expand the Related Work: multi-modal fusion (cross-attention, Transformer
+fusion), remote-sensing multi-modal fusion, and metric learning for remote
+sensing.}
+\resp{Done. Related Work now adds short paragraphs on attention-based multi-modal
+fusion (cross-attention between modality tokens, ViLBERT; Transformer encoders
+over a modality-token set), remote-sensing multi-modal fusion, and metric
+learning, reusing citations already present in the experiments. We state that
+these architectures shape the embedding space only indirectly through task
+losses, unlike MMCTL's explicit annotation-aligned geometry.}
+
+\cmt{3}{Check Eq.~7, second term---is it also squared?}
+\resp{Verified against the implementation (\texttt{continuous\_triplet\_loss.py}):
+the embedding anchor--positive and anchor--negative distances are squared, while
+the annotation-distance gap is not. The manuscript equation already matches the
+code, so no change was required.}
+
+\cmt{4}{Loss-component ablation: report the effect of each loss component (only
+the adaptive continuous triplet, only the distance-alignment regularizer).}
+\resp{Done---new experiment. We retrain the NEON shared space with the full loss,
+with the adaptive triplet only, and with the distance-alignment regularizer only
+(fixed encoder proxy, optimizer, and $50/50$ protocol; mean over three seeds),
+reported in a new ablation table:}
+\begin{itemize}
+  \item the \emph{adaptive triplet} carries discrimination and continuity---dropping it (reg-only) lowers accuracy by $\sim$5.6 points ($67.6\%\rightarrow62.0\%$) and weakens box/height regression;
+  \item the \emph{distance-alignment regularizer} tightens class geometry, sharpening the class-alignment residual $\sim$7$\times$ ($0.014\rightarrow0.002$) at negligible accuracy cost;
+  \item no single term is best on every axis; the \emph{full loss} attains the top accuracy while staying within one standard deviation of the best variant on every other column---the balanced behavior the paper relies on.
+\end{itemize}
+
+\cmt{5}{The Transformer NEON accuracy ($\sim$43\%) is far below RGB ($\sim$76\%);
+explain or check the configuration and tuning.}
+\resp{Done---new experiment plus clarification. Re-tuning shows the low number is
+an optimization artifact on the small NEON splits, not an architectural limit:}
+\begin{itemize}
+  \item the small shared default gives $36.8\%$ (class token) / $41.5\%$ (mean-pool);
+  \item lowering the learning rate to $3\times10^{-4}$ and training longer reaches $76.1\%$ (class token) and $80.7\%$ (mean-pool with a classification-only head)---on par with the strongest fusion baselines.
+\end{itemize}
+\noindent We keep the small, shared default in the main tables so that all
+baselines use one identical configuration, and report the tuned number as a
+caveat.
+
+\cmt{6}{Add a short line per fusion model describing model-specific
+configuration/tuning (e.g., number of attention heads) and how it was selected.}
+\resp{Done. A new ``Fusion-baseline configurations'' note gives, per method:
+SupCon (two-layer projection $1024{\to}1024{\to}256$, temperature $0.07$);
+cross-attention (single block, $4$ heads); Transformer ($2$ layers, $4$ heads,
+feed-forward width $2{\times}1024$, GELU, class-token readout); together with the
+shared training budget and the rationale for keeping small, identical defaults
+across datasets so that differences reflect the fusion mechanism.}
+
+\cmt{7}{Add the within-class Spearman $\rho$ value to each panel of the per-class
+zoom figure.}
+\resp{Done. Each panel of the per-class zoom figure is now annotated with its
+within-class Spearman $\rho$ between pairwise embedding and annotation distances
+(higher is smoother); the caption documents the annotation.}
+
+\cmt{8}{Clarify why the NEON MMCTL results differ between the per-class table and
+the $w_{\text{class}}{=}1.0$ default row in the ablation table.}
+\resp{Done. We added a note that the two rows evaluate the \emph{same} default
+model under different held-out splits and fold seeds (the ablation uses the
+released full-set embeddings with its own $50/50$ split); the small differences
+(e.g., accuracy $80.1\%$ vs.\ $80.3\%$) are within one standard deviation and
+reflect this protocol variation, not a different model.}
+}
+
 \end{document}

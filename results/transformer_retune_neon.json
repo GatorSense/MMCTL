@@ -1,0 +1,23 @@
+{
+  "device": "cuda",
+  "n": 592,
+  "results": {
+    "default (cls, lr1e-3, 300ep, multitask)": [
+      36.82432432432432,
+      2.3503415041792004
+    ],
+    "mean-pool (lr1e-3, 300ep, multitask)": [
+      41.486486486486484,
+      4.028069881294292
+    ],
+    "cls, lr3e-4, 600ep, multitask": [
+      76.14864864864866,
+      1.8454730113172526
+    ],
+    "mean-pool, lr3e-4, 600ep, cls-only": [
+      80.67567567567568,
+      1.5168881297732177
+    ]
+  },
+  "note": "LogReg probe accuracy (%) on Transformer-fused NEON embeddings, 5-fold."
+}
