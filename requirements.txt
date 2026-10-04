@@ -1,0 +1,13 @@
+# HiPerGator pip environment (CTL/CVPR2027-style venv; see hpg/).
+# numpy/scipy/scikit-learn are pinned to the proven HPG stack; TensorFlow is
+# reinstalled with the bundled CUDA runtime by hpg/remote/setup_venv.sh for GPU.
+# (Local development uses uv via pyproject.toml / uv.lock instead.)
+numpy==1.26.4
+scipy==1.11.4
+scikit-learn==1.4.2
+pandas==2.0.3
+matplotlib==3.9.4
+h5py==3.14.0
+tqdm==4.67.1
+torch==2.2.2
+tensorflow==2.15.1

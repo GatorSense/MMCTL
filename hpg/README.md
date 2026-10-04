@@ -1,58 +1,70 @@
 # Training MMCTL on HiPerGator
 
-SLURM job scripts for running MMCTL training and experiments on UF HiPerGator GPU
-nodes. The environment is the same uv setup used locally (`pyproject.toml` /
-`uv.lock`), with GPU wheels installed on top.
+SLURM setup for UF HiPerGator, mirroring the CTL / CVPR2027 workflow: a project
+`.venv` built once on a login node, a shared `common_env.sh`, and per-task
+`.slurm` files submitted with `sbatch`.
 
-## 0. Get the code and data onto HiPerGator
-```bash
-cd /blue/azare/$USER            # your group's blue storage
-git clone https://github.com/GatorSense/MMCTL.git
-cd MMCTL
-# copy the datasets here (they are gitignored), e.g. from Zenodo or your local box:
-#   awir_data.npz, neon_data.npz  (and the released embeddings if running evals)
+Layout:
+```
+hpg/
+  env.sh                  # HPG host/dir vars (PROJECT_DIR=/blue/azare/zhou.m/MMCTL)
+  sync_push.sh            # rsync code → HPG (+ git push); excludes *.npz
+  sync_exclude.txt
+  remote/setup_venv.sh    # run ONCE on a login node to build .venv (pip + GPU TF)
+  slurm/
+    sbatch_header.sh      # shared #SBATCH defaults (reference)
+    common_env.sh         # modules + .venv activation (sourced by jobs)
+    train_mmctl.slurm     # train the MMCTL latent space
+    run.slurm             # generic GPU runner (CMD="...")
 ```
 
-## 1. One-time environment setup (on a LOGIN node)
-Login nodes have internet; compute nodes do not, so build the env first:
+## 1. Push code to HiPerGator
+From your Mac (repo root), after committing:
 ```bash
-bash hpg/setup_env.sh
+bash hpg/sync_push.sh           # rsync to /blue/azare/$USER/MMCTL + git push
 ```
-This installs `uv`, runs `uv sync` (creating `.venv`), and installs the
-GPU TensorFlow wheel. PyTorch from PyPI is already a CUDA build on Linux.
-
-## 2. Submit jobs (from the repo root)
-Edit the `#SBATCH` header in each script first: set `--account` / `--qos` to your
-allocation (default `azare`) and `--mail-user` to your UFL email.
-
-Train the MMCTL latent space:
+Datasets (`*.npz`) are excluded from the sync — copy them once:
 ```bash
-sbatch hpg/train_mmctl.sbatch                 # full (runs=8, iter=10, epochs=100)
-sbatch hpg/train_mmctl.sbatch demo            # quick smoke
-DATA=/blue/azare/$USER/MMCTL/awir_data.npz sbatch hpg/train_mmctl.sbatch
+scp awir_data.npz neon_data.npz zhou.m@hpg.rc.ufl.edu:/blue/azare/zhou.m/MMCTL/
 ```
+(Or `git clone` the repo directly under `/blue/azare/$USER/`.)
 
-Run any other script on a GPU with the generic runner:
+## 2. Build the environment (ONCE, on a LOGIN node)
+Login nodes have internet; compute nodes do not.
 ```bash
-sbatch hpg/run.sbatch python mmctl/train_taskheads.py --data_npz awir_data.npz --mmctl_dir outputs/mmctl
-sbatch hpg/run.sbatch python scripts/freeze_vs_e2e_neon.py
-sbatch hpg/run.sbatch python scripts/ablation_loss_components_neon.py
-sbatch hpg/run.sbatch python scripts/retune_transformer_neon.py
+ssh zhou.m@hpg.rc.ufl.edu
+cd /blue/azare/zhou.m/MMCTL
+bash hpg/remote/setup_venv.sh          # python -m venv .venv, pip install, GPU TensorFlow
+```
+Recreate after dependency changes: `RECREATE_VENV=1 bash hpg/remote/setup_venv.sh`.
+
+## 3. Submit jobs (from `/blue/azare/zhou.m/MMCTL`)
+```bash
+# Train the MMCTL latent space
+sbatch --export=ALL,DATA=awir_data.npz hpg/slurm/train_mmctl.slurm
+sbatch --export=ALL,MODE=demo          hpg/slurm/train_mmctl.slurm   # quick smoke
+
+# Anything else, on a GPU, via the generic runner
+sbatch --export=ALL,CMD="python mmctl/train_taskheads.py --data_npz awir_data.npz --mmctl_dir outputs/mmctl" hpg/slurm/run.slurm
+sbatch --export=ALL,CMD="python scripts/freeze_vs_e2e_neon.py"            hpg/slurm/run.slurm
+sbatch --export=ALL,CMD="python scripts/ablation_loss_components_neon.py" hpg/slurm/run.slurm
+sbatch --export=ALL,CMD="python scripts/retune_transformer_neon.py"       hpg/slurm/run.slurm
 ```
 
-## 3. Monitor
+## 4. Monitor
 ```bash
 squeue -u $USER
-tail -f hpg/logs/<jobname>_<jobid>.out
+tail -f /blue/azare/zhou.m/MMCTL/logs/<jobname>_<jobid>.out
 ```
 
 ## Notes
-- GPU check on a node: `srun --partition=gpu --gpus=1 --time=10:00 --pty bash`,
-  then `uv run --offline python -c "import torch,tensorflow as tf; print(torch.cuda.is_available(), tf.config.list_physical_devices('GPU'))"`.
-- `uv run --offline` uses the prebuilt `.venv` without touching the network
-  (required on compute nodes). Re-run `hpg/setup_env.sh` on a login node if you
-  change dependencies.
-- Adjust `--gpus`, `--mem`, `--cpus-per-task`, and `--time` to your workload;
-  `--gpus=a100:1` requests an A100 specifically, `--gpus=1` takes any GPU.
-- The round-2 experiment scripts default to small/CPU-friendly settings; on a GPU
-  node you can raise their epoch counts for the full-scale versions.
+- Partition `hpg-turin`, `--gpus=1`, 12 CPUs, 50 GB, 72 h — adjust in the `.slurm`
+  headers (and `--mail-user`) for your job.
+- `common_env.sh` sets `TF_ENABLE_ONEDNN_OPTS=0` (avoids the `_MklLayerNorm` GPU
+  crash) and `TF_FORCE_GPU_ALLOW_GROWTH=true`.
+- The HPG venv uses pip (`requirements.txt`) with `tensorflow[and-cuda]==2.15.1`
+  for GPU; local development uses uv (`pyproject.toml`). PyTorch from PyPI is a
+  CUDA build on Linux.
+- GPU sanity check on a node:
+  `srun --partition=hpg-turin --gpus=1 --time=10:00 --pty bash`, then
+  `source /blue/azare/zhou.m/MMCTL/hpg/slurm/common_env.sh && python -c "import torch,tensorflow as tf; print(torch.cuda.is_available(), tf.config.list_physical_devices('GPU'))"`.
