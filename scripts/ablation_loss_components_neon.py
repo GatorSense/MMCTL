@@ -28,9 +28,35 @@ from sklearn.preprocessing import LabelEncoder
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from scripts.reproduce_neon_ae_mmctl import (  # noqa: E402
-    Tiny, Spec, cos_rows, build_ann, norm_in, struct, probe, l2,
+    Tiny, Spec, cos_rows, build_ann, norm_in, struct, l2,
 )
 from mmctl.utils import generate_triplet_box_label_normalized  # noqa: E402
+
+from sklearn.linear_model import LogisticRegression, Ridge  # noqa: E402
+from sklearn.metrics import accuracy_score, r2_score  # noqa: E402
+from sklearn.model_selection import StratifiedKFold  # noqa: E402
+from sklearn.multioutput import MultiOutputRegressor  # noqa: E402
+from sklearn.pipeline import make_pipeline  # noqa: E402
+from sklearn.preprocessing import StandardScaler  # noqa: E402
+
+
+def probe(z, yc, yb, yh, seed=42):
+    """5-fold LogReg (cls) + Ridge (box/height) probe; higher is better."""
+    yb, yh = np.nan_to_num(yb), np.nan_to_num(yh)
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
+    accs, r2b, r2h = [], [], []
+    for tr, te in skf.split(z, yc):
+        clf = make_pipeline(StandardScaler(), LogisticRegression(max_iter=3000))
+        clf.fit(z[tr], yc[tr]); accs.append(accuracy_score(yc[te], clf.predict(z[te])))
+        for Y, bucket in ((yb, r2b), (yh, r2h)):
+            Y2 = Y[:, :2] if Y.ndim == 2 and Y.shape[1] >= 2 else Y.reshape(len(Y), -1)[:, :1]
+            reg = make_pipeline(StandardScaler(), MultiOutputRegressor(Ridge(1.0)))
+            reg.fit(z[tr], Y2); pred = reg.predict(z[te])
+            scores = [r2_score(Y2[te, d], pred[:, d]) for d in range(Y2.shape[1])
+                      if np.std(Y2[te, d]) >= 1e-8]
+            bucket.append(float(np.mean(scores)) if scores else 0.0)
+    return {"acc_pct": 100 * float(np.mean(accs)),
+            "r2_box": float(np.mean(r2b)), "r2_height": float(np.mean(r2h))}
 
 MAIN = "/Users/meilunzhou/Documents/GitHub/MMCTL"
 NEON = os.path.join(MAIN, "neon_data.npz")
