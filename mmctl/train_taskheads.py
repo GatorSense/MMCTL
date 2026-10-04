@@ -18,6 +18,10 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, f1_score, r2_score
 
+# Ensure the repo root is importable when run as a script (python mmctl/foo.py)
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
 from mmctl.utils import generate_triplet_box_label_normalized
 from mmctl.losses import (
     keras_batch_all_triplet_continuous_loss_multimodal,

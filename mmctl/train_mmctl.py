@@ -9,6 +9,10 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
 
+# Ensure the repo root is importable when run as a script (python mmctl/foo.py)
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
 from mmctl.models import image_reconstruction_multi_modalv1
 from mmctl.utils import (
     generate_triplet_box_label_normalized,
