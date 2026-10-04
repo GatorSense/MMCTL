@@ -3,6 +3,8 @@
 # Sets modules, activates .venv, loads optional .env.
 
 : "${PROJECT_DIR:=/blue/azare/zhou.m/MMCTL}"
+# Which environment to activate: .venv (TF + CPU torch) or .venv_torch (GPU torch).
+: "${VENV:=.venv}"
 
 module purge 2>/dev/null || true
 module load cuda/12.3.0 2>/dev/null || module load cuda 2>/dev/null || true
@@ -11,10 +13,10 @@ module load gcc/12.2.0 2>/dev/null || module load gcc 2>/dev/null || true
 # scrub PYTHONPATH so cluster site-packages do not shadow .venv packages.
 module load python/3.10 2>/dev/null || module load python/3.11 2>/dev/null || true
 
-VENV_ACTIVATE="${PROJECT_DIR}/.venv/bin/activate"
-VENV_PYTHON="${PROJECT_DIR}/.venv/bin/python"
+VENV_ACTIVATE="${PROJECT_DIR}/${VENV}/bin/activate"
+VENV_PYTHON="${PROJECT_DIR}/${VENV}/bin/python"
 if [[ ! -f "${VENV_ACTIVATE}" ]]; then
-  echo "ERROR: Virtualenv not found at ${PROJECT_DIR}/.venv"
+  echo "ERROR: Virtualenv not found at ${PROJECT_DIR}/${VENV}"
   echo ""
   echo "Create it once on an HPG login node (not inside sbatch):"
   echo "  ssh zhou.m@hpg.rc.ufl.edu"
@@ -32,7 +34,7 @@ export PYTHONNOUSERSITE=1
 
 # shellcheck disable=SC1090
 source "${VENV_ACTIVATE}"
-export PATH="${PROJECT_DIR}/.venv/bin:${PATH}"
+export PATH="${PROJECT_DIR}/${VENV}/bin:${PATH}"
 
 if [[ ! -x "${VENV_PYTHON}" ]]; then
   echo "ERROR: venv python not executable: ${VENV_PYTHON}"

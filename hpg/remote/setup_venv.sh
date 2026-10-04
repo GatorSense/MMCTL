@@ -2,11 +2,19 @@
 # Run ONCE on a HiPerGator LOGIN node after first code push:
 #   bash /blue/azare/zhou.m/MMCTL/hpg/remote/setup_venv.sh
 # Login nodes have internet; compute nodes do not.
+#
+# TensorFlow and PyTorch GPU pip wheels ship conflicting CUDA runtimes (TF 2.15 ->
+# cu12.2 / nccl 2.16; torch 2.2 -> cu12.1 / nccl 2.19), which breaks torch in a
+# shared env ("libtorch_cuda.so: undefined symbol: ncclCommRegister"). We therefore
+# build TWO venvs:
+#   .venv        TensorFlow[and-cuda] (GPU) + torch CPU-only  -> TF scripts
+#                (train_mmctl, train_taskheads, eval_*; torch heads are tiny/CPU)
+#   .venv_torch  torch (GPU) only                             -> torch experiments
+#                (scripts/ablation_loss_components_neon.py, retune_transformer_neon.py)
 set -euo pipefail
 
 PROJECT_DIR="${PROJECT_DIR:-/blue/azare/zhou.m/MMCTL}"
 cd "${PROJECT_DIR}"
-
 echo "=== MMCTL HPG venv setup in ${PROJECT_DIR} ==="
 
 if command -v module &>/dev/null; then
@@ -17,40 +25,44 @@ if command -v module &>/dev/null; then
 fi
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
-if ! command -v "${PYTHON_BIN}" &>/dev/null; then
-  echo "ERROR: ${PYTHON_BIN} not found. Set PYTHON_BIN or load a python module."
-  exit 1
-fi
+command -v "${PYTHON_BIN}" &>/dev/null || { echo "ERROR: ${PYTHON_BIN} not found"; exit 1; }
 
-if [[ "${RECREATE_VENV:-0}" == "1" && -d .venv ]]; then
-  echo "Removing existing .venv (RECREATE_VENV=1) ..."
-  rm -rf .venv
-fi
-
-"${PYTHON_BIN}" -m venv --copies .venv
-# shellcheck disable=SC1091
-source .venv/bin/activate
-unset PYTHONPATH
-unset PYTHONHOME
-export PYTHONNOUSERSITE=1
-
-pip install --upgrade pip
-# Pin the scientific stack first so the resolver does not pull incompatible versions.
-pip install --no-cache-dir 'numpy==1.26.4' 'scipy==1.11.4' 'scikit-learn==1.4.2'
-pip install --no-cache-dir -r requirements.txt
-
-# HPG GPU: requirements.txt pins plain `tensorflow` (CPU). Reinstall with the bundled
-# CUDA runtime + cuDNN so jobs use the GPU instead of silently falling back to CPU.
 TF_VERSION="${TF_VERSION:-2.15.1}"
+TORCH_VERSION="${TORCH_VERSION:-2.2.2}"
+
+build_base () {  # $1 = venv dir
+  local v="$1"
+  "${PYTHON_BIN}" -m venv --copies "$v"
+  # shellcheck disable=SC1091
+  source "$v/bin/activate"
+  unset PYTHONPATH PYTHONHOME; export PYTHONNOUSERSITE=1
+  pip install --upgrade pip
+  pip install --no-cache-dir 'numpy==1.26.4' 'scipy==1.11.4' 'scikit-learn==1.4.2'
+  pip install --no-cache-dir -r requirements.txt
+  deactivate
+}
+
+# ---------- .venv : TensorFlow GPU + torch CPU (no CUDA wheels -> no clash) -----
+if [[ "${RECREATE_VENV:-0}" == "1" && -d .venv ]]; then rm -rf .venv; fi
+echo "--- building .venv (TF GPU + torch CPU) ---"
+build_base .venv
+source .venv/bin/activate
+unset PYTHONPATH PYTHONHOME; export PYTHONNOUSERSITE=1
 pip install --no-cache-dir "tensorflow[and-cuda]==${TF_VERSION}" "numpy==1.26.4"
+# CPU-only torch: the CPU wheel pulls NO nvidia-* packages, so it cannot clobber
+# TensorFlow's CUDA runtime. (Torch here only runs small task heads.)
+pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu "torch==${TORCH_VERSION}"
+python -c "import tensorflow as tf, torch; print('TF', tf.__version__, 'GPUs', tf.config.list_physical_devices('GPU')); print('torch', torch.__version__, 'cpu-only')"
+deactivate
 
-python -c "
-import numpy as np
-import numpy._typing  # noqa: F401
-import sklearn, torch
-print('numpy', np.__version__, 'scikit-learn', sklearn.__version__, 'torch', torch.__version__, 'OK')
-print('torch cuda', torch.cuda.is_available())
-"
-python -c "import tensorflow as tf; print('TF', tf.__version__); print('GPUs', tf.config.list_physical_devices('GPU'))" || true
+# ---------- .venv_torch : torch GPU only ---------------------------------------
+if [[ "${RECREATE_VENV:-0}" == "1" && -d .venv_torch ]]; then rm -rf .venv_torch; fi
+echo "--- building .venv_torch (torch GPU) ---"
+build_base .venv_torch
+source .venv_torch/bin/activate
+unset PYTHONPATH PYTHONHOME; export PYTHONNOUSERSITE=1
+pip install --no-cache-dir "torch==${TORCH_VERSION}"   # default PyPI = CUDA build on Linux
+python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+deactivate
 
-echo "=== Done. Activate with: source ${PROJECT_DIR}/.venv/bin/activate ==="
+echo "=== Done. TF jobs use .venv; torch experiments use VENV=.venv_torch ==="

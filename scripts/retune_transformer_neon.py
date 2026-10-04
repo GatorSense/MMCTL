@@ -28,9 +28,26 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from scripts.eval_neon_released_embeddings import neon_index_592  # noqa: E402
 
-MAIN = "/Users/meilunzhou/Documents/GitHub/MMCTL"
+
+def neon_index_592(npz_path):
+    """Top-10 species + box center*10 allows a 60x60 RGB crop in 110x110.
+    Inlined from scripts.eval_neon_released_embeddings to keep this script
+    TensorFlow-free (so it runs in a torch-only venv on HiPerGator)."""
+    d = np.load(npz_path, allow_pickle=True)
+    yp = d["box_labels"].astype(np.float64)
+    ys = LabelEncoder().fit_transform(d["string_label"])
+    counts = np.bincount(ys)
+    top = np.argsort(counts)[::-1][:10]
+    keep_cls = np.isin(ys, top)
+    H, W = d["rgb"].shape[1:3]
+    cx = (yp[:, 0] + yp[:, 1]) / 2.0 * 10.0
+    cy = (yp[:, 2] + yp[:, 3]) / 2.0 * 10.0
+    ok = (cx - 30 >= 0) & (cy - 30 >= 0) & (cx + 30 <= W) & (cy + 30 <= H)
+    return np.where(keep_cls & ok)[0]
+
+
+MAIN = os.environ.get("MMCTL_DIR", ROOT)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # force CPU on mac (MPS slow for small Transformer)
 
 
