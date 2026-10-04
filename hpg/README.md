@@ -23,11 +23,20 @@ From your Mac (repo root), after committing:
 ```bash
 bash hpg/sync_push.sh           # rsync to /blue/azare/$USER/MMCTL + git push
 ```
-Datasets (`*.npz`) are excluded from the sync — copy them once:
+Datasets (`*.npz`) and the released `*_all_6.npy` / `*_all.npy` embeddings are
+not synced automatically. Place them under `/blue/azare/$USER/MMCTL/`:
 ```bash
-scp awir_data.npz neon_data.npz zhou.m@hpg.rc.ufl.edu:/blue/azare/zhou.m/MMCTL/
+# Raw datasets already on HPG (e.g. in the CTL project) — symlink them in:
+cd /blue/azare/$USER/MMCTL
+ln -sf /blue/azare/$USER/cursor/neon_data.npz .
+ln -sf /blue/azare/$USER/cursor/awir_data.npz .
+# Released embeddings (MMCTL-specific) from your local MMCTL checkout, if running
+# the eval / Transformer-retune scripts:
+#   scp neon_rgb_all_6.npy neon_hsi_all_6.npy neon_lidar_all_6.npy \
+#       zhou.m@hpg.rc.ufl.edu:/blue/azare/zhou.m/MMCTL/
 ```
-(Or `git clone` the repo directly under `/blue/azare/$USER/`.)
+Scripts resolve data relative to the repo root; override with `MMCTL_DIR=/path`
+(e.g. `--export=ALL,MMCTL_DIR=/blue/azare/$USER/cursor,VENV=.venv_torch,CMD=...`).
 
 ## 2. Build the environment (ONCE, on a LOGIN node)
 Login nodes have internet; compute nodes do not.
