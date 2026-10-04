@@ -1,0 +1,11 @@
+.git/
+.venv/
+.venv_*/
+__pycache__/
+*.pyc
+outputs/
+logs/
+.claude/
+.DS_Store
+.env
+*.npz

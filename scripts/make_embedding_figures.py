@@ -236,6 +236,17 @@ def combined_zoom_figure(specs, out_stem, kind="pca", seed=SEED):
             proj_cache[ds] = {m: {kind: project(emb[m], kind, seed=seed)} for m in FUSION_METHODS}
         return data_cache[ds], proj_cache[ds]
 
+    from scipy.spatial.distance import pdist
+    from scipy.stats import spearmanr
+
+    def within_rho(z_sub, scalar):
+        zc = l2(z_sub.astype(np.float32))
+        de = pdist(zc, "cosine")
+        da = pdist(np.asarray(scalar, float).reshape(-1, 1), "euclidean")
+        if np.std(de) < 1e-9 or np.std(da) < 1e-9:
+            return float("nan")
+        return float(spearmanr(de, da).correlation)
+
     nrows, ncols = len(specs), len(FUSION_METHODS)
     fig, axes = plt.subplots(nrows, ncols, figsize=(2.0 * ncols, 2.0 * nrows + 0.4),
                              squeeze=False)
@@ -258,6 +269,11 @@ def combined_zoom_figure(specs, out_stem, kind="pca", seed=SEED):
             dy = xy[:, 1].ptp() * 0.08 + 1e-6
             ax.set_xlim(xy[:, 0].min() - dx, xy[:, 0].max() + dx)
             ax.set_ylim(xy[:, 1].min() - dy, xy[:, 1].max() + dy)
+            # Quantify the visual gradient: within-class Spearman rho.
+            rho = within_rho(d[f"emb_{m}"][mask], cvals)
+            ax.text(0.045, 0.955, rf"$\rho={rho:.2f}$", transform=ax.transAxes,
+                    fontsize=8.5, va="top", ha="left",
+                    bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="#bbbbbb", alpha=0.8))
             _bare(ax)
             if r == 0:
                 ax.set_title(m, fontsize=11, pad=4)
