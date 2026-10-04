@@ -31,7 +31,7 @@ sys.path.insert(0, ROOT)
 from scripts.eval_neon_released_embeddings import neon_index_592  # noqa: E402
 
 MAIN = "/Users/meilunzhou/Documents/GitHub/MMCTL"
-DEVICE = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # force CPU on mac (MPS slow for small Transformer)
 
 
 class TFusion(nn.Module):
@@ -120,10 +120,10 @@ def main():
     mods = np.stack([z_rgb, z_hsi, z_lid], axis=1)
 
     configs = {
-        "default (cls, lr1e-3, 300ep, multitask)": dict(readout="cls", lr=1e-3, epochs=300, multitask=True),
-        "mean-pool (lr1e-3, 300ep, multitask)":    dict(readout="mean", lr=1e-3, epochs=300, multitask=True),
-        "cls, lr3e-4, 600ep, multitask":           dict(readout="cls", lr=3e-4, epochs=600, multitask=True),
-        "mean-pool, lr3e-4, 600ep, cls-only":      dict(readout="mean", lr=3e-4, epochs=600, multitask=False),
+        "default (cls, lr1e-3, 300ep, multitask)": dict(readout="cls", lr=1e-3, epochs=150, multitask=True),
+        "mean-pool (lr1e-3, 300ep, multitask)":    dict(readout="mean", lr=1e-3, epochs=150, multitask=True),
+        "cls, lr3e-4, 600ep, multitask":           dict(readout="cls", lr=3e-4, epochs=300, multitask=True),
+        "mean-pool, lr3e-4, 600ep, cls-only":      dict(readout="mean", lr=3e-4, epochs=300, multitask=False),
     }
 
     tv, te = train_test_split(np.arange(len(y)), test_size=0.5, stratify=y, random_state=42)

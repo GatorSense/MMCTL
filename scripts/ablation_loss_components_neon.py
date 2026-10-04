@@ -51,7 +51,7 @@ def probe(z, yc, yb, yh, seed=42):
         for Y, bucket in ((yb, r2b), (yh, r2h)):
             Y2 = Y[:, :2] if Y.ndim == 2 and Y.shape[1] >= 2 else Y.reshape(len(Y), -1)[:, :1]
             reg = make_pipeline(StandardScaler(), MultiOutputRegressor(Ridge(1.0)))
-            reg.fit(z[tr], Y2); pred = reg.predict(z[te])
+            reg.fit(z[tr], Y2[tr]); pred = reg.predict(z[te])
             scores = [r2_score(Y2[te, d], pred[:, d]) for d in range(Y2.shape[1])
                       if np.std(Y2[te, d]) >= 1e-8]
             bucket.append(float(np.mean(scores)) if scores else 0.0)
