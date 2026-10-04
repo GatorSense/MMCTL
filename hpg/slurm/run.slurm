@@ -12,11 +12,13 @@
 #SBATCH --partition=hpg-turin
 #SBATCH --gpus=1
 #
-# Generic GPU runner: pass the command via the CMD env var.
-#   sbatch --export=ALL,CMD="python scripts/freeze_vs_e2e_neon.py"       hpg/slurm/run.slurm
-#   sbatch --export=ALL,CMD="python scripts/ablation_loss_components_neon.py" hpg/slurm/run.slurm
-#   sbatch --export=ALL,CMD="python scripts/retune_transformer_neon.py"  hpg/slurm/run.slurm
-#   sbatch --export=ALL,CMD="python mmctl/smoke_test_train_mmctl.py"      hpg/slurm/run.slurm
+# Generic GPU runner: pass the command via CMD, and VENV to pick the environment
+# (default .venv = TF+CPU-torch; use .venv_torch for the GPU-torch experiments).
+#   # TF scripts (.venv):
+#   sbatch --export=ALL,CMD="python mmctl/smoke_test_train_mmctl.py"  hpg/slurm/run.slurm
+#   # torch-only experiments (.venv_torch, GPU torch):
+#   sbatch --export=ALL,VENV=.venv_torch,CMD="python scripts/ablation_loss_components_neon.py" hpg/slurm/run.slurm
+#   sbatch --export=ALL,VENV=.venv_torch,CMD="python scripts/retune_transformer_neon.py"       hpg/slurm/run.slurm
 set -euo pipefail
 
 PROJECT_DIR="/blue/azare/zhou.m/MMCTL"

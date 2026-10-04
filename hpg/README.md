@@ -34,7 +34,7 @@ Login nodes have internet; compute nodes do not.
 ```bash
 ssh zhou.m@hpg.rc.ufl.edu
 cd /blue/azare/zhou.m/MMCTL
-bash hpg/remote/setup_venv.sh          # python -m venv .venv, pip install, GPU TensorFlow
+bash hpg/remote/setup_venv.sh          # builds .venv (TF GPU + CPU torch) and .venv_torch (GPU torch)
 ```
 Recreate after dependency changes: `RECREATE_VENV=1 bash hpg/remote/setup_venv.sh`.
 
@@ -45,10 +45,12 @@ sbatch --export=ALL,DATA=awir_data.npz hpg/slurm/train_mmctl.slurm
 sbatch --export=ALL,MODE=demo          hpg/slurm/train_mmctl.slurm   # quick smoke
 
 # Anything else, on a GPU, via the generic runner
+# TF scripts use the default .venv:
 sbatch --export=ALL,CMD="python mmctl/train_taskheads.py --data_npz awir_data.npz --mmctl_dir outputs/mmctl" hpg/slurm/run.slurm
 sbatch --export=ALL,CMD="python scripts/freeze_vs_e2e_neon.py"            hpg/slurm/run.slurm
-sbatch --export=ALL,CMD="python scripts/ablation_loss_components_neon.py" hpg/slurm/run.slurm
-sbatch --export=ALL,CMD="python scripts/retune_transformer_neon.py"       hpg/slurm/run.slurm
+# torch-only experiments use the GPU-torch env:
+sbatch --export=ALL,VENV=.venv_torch,CMD="python scripts/ablation_loss_components_neon.py" hpg/slurm/run.slurm
+sbatch --export=ALL,VENV=.venv_torch,CMD="python scripts/retune_transformer_neon.py"       hpg/slurm/run.slurm
 ```
 
 ## 4. Monitor & pull results
@@ -70,9 +72,10 @@ bash hpg/sync_pull.sh results --dry-run   # preview without copying
   headers (and `--mail-user`) for your job.
 - `common_env.sh` sets `TF_ENABLE_ONEDNN_OPTS=0` (avoids the `_MklLayerNorm` GPU
   crash) and `TF_FORCE_GPU_ALLOW_GROWTH=true`.
-- The HPG venv uses pip (`requirements.txt`) with `tensorflow[and-cuda]==2.15.1`
-  for GPU; local development uses uv (`pyproject.toml`). PyTorch from PyPI is a
-  CUDA build on Linux.
+- Two pip venvs avoid the TF/torch CUDA-wheel clash: `.venv` has
+  `tensorflow[and-cuda]==2.15.1` (GPU) + CPU-only torch; `.venv_torch` has GPU
+  torch only. Select with `VENV=.venv_torch` on torch-only jobs. Local dev uses
+  uv (`pyproject.toml`).
 - GPU sanity check on a node:
   `srun --partition=hpg-turin --gpus=1 --time=10:00 --pty bash`, then
   `source /blue/azare/zhou.m/MMCTL/hpg/slurm/common_env.sh && python -c "import torch,tensorflow as tf; print(torch.cuda.is_available(), tf.config.list_physical_devices('GPU'))"`.

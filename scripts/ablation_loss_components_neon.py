@@ -58,7 +58,7 @@ def probe(z, yc, yb, yh, seed=42):
     return {"acc_pct": 100 * float(np.mean(accs)),
             "r2_box": float(np.mean(r2b)), "r2_height": float(np.mean(r2h))}
 
-MAIN = "/Users/meilunzhou/Documents/GitHub/MMCTL"
+MAIN = os.environ.get("MMCTL_DIR", ROOT)
 NEON = os.path.join(MAIN, "neon_data.npz")
 EMB_DIM, BS, MM_EP, RUNS, SEED = 128, 64, 20, 3, 42
 DEVICE = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
