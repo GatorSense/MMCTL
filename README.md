@@ -2,7 +2,6 @@
 
 This repository contains code for training MMCTL latent spaces, training downstream task heads, and reproducing lightweight metric summaries from the paper.
 
-Managed by [Meilun Zhou](https://www.linkedin.com/in/meilun-zhou/) through [GatorSense](https://faculty.eng.ufl.edu/machine-learning/).
 
 ## Files
 
