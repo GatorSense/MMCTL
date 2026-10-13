@@ -9,7 +9,7 @@ Two global tasks requested for this round:
 - Apply the approved round-3 edits below. **Done.**
 - **Final version:** remove all red highlighting (`\red{}`, `\new{}`, `{\color{red}…}`) so the text is plain. **Done** — `\new`/`\red`/`\todo` neutralized to pass-through and all `{\color{red}…}` groups unwrapped; 0 red remaining.
 
-**Decisions (resolved):** ① global rename "margin-free" → "annotation-derived adaptive margin" (0 "margin-free" remaining). ② anonymized repo URL set to `https://anonymous.4open.science/r/MMCTL-C831/`. ③ red-diff backup saved as `paper_files/wacv-2027-author-kit-template/reddiff_final.tex` (round-3 edits + red intact); `mmctl_wacv.tex` is the clean final.
+**Decisions (resolved):** ① global rename "margin-free" → "annotation-derived adaptive margin" (0 "margin-free" remaining). ② anonymized repo URL set to `https://anonymous.4open.science/r/MMCTL-519C/` (serves the `anonymous-repro` branch). ③ red-diff backup saved as `paper_files/wacv-2027-author-kit-template/reddiff_final.tex` (round-3 edits + red intact); `mmctl_wacv.tex` is the clean final.
 
 ---
 
