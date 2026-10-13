@@ -1,0 +1,13 @@
+# Shared scientific base for the HiPerGator venvs (see hpg/remote/setup_venv.sh).
+# TensorFlow and PyTorch are installed PER-VENV by setup_venv.sh because their
+# pip CUDA wheels conflict in a single environment:
+#   .venv        -> tensorflow[and-cuda] (GPU) + torch (CPU-only)   [TF scripts]
+#   .venv_torch  -> torch (GPU) only                                [torch experiments]
+# (Local development uses uv via pyproject.toml / uv.lock instead.)
+numpy==1.26.4
+scipy==1.11.4
+scikit-learn==1.4.2
+pandas==2.0.3
+matplotlib==3.9.4
+h5py==3.14.0
+tqdm==4.67.1
